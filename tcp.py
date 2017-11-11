@@ -18,7 +18,8 @@ Coding notes:
 	Feel free to add addition functions if you need to.
 	Write your own test program.
 """
-
+import socket
+import thread
 class TCPReceiver(): #inherit multi-threading and socket
     """
     A thread that listens to oncoming messages.
@@ -31,7 +32,20 @@ class TCPReceiver(): #inherit multi-threading and socket
 			port: The port number to connect/listen to new connections.
 			q: A shared queue containing future messages (in binary data type) from the sender.
 		"""
-		pass
+        self.receiver_host = host
+        self.receiver_port = port
+        self.queue = queue
+		
+    def connect(self):
+        if sock is None:
+            self.sock = socket.socket(
+                            socket.AF_INET, socket.SOCK_STREAM)
+        else:
+            self.sock = sock
+        try:
+            self.sock.connect((self.receiver_host, self.receiver_port))
+        except:
+            print('connction failed')
 
     def run(self):
         """
@@ -42,8 +56,18 @@ class TCPReceiver(): #inherit multi-threading and socket
 				Put any imcoming messages to the queue.
 				In case the connection is broken for any reason, close all existing connection, then connect/listen to another one.
         """
-        #your codes
-		
+        thread.start_new_thread( _run )
+
+    def _run(self)
+		self.connect()
+        while(not self.stop):
+            
+            data = self.sock.recieve()
+            if(data is not None):
+                self.q.enqueue(data)
+            else:
+                print("error occured, reconnecting...")
+                self.connect(self.receiver_host, self.receiver_port)
 
 class TCPSender(): #inherit multi-threading and socket
     """
@@ -57,8 +81,15 @@ class TCPSender(): #inherit multi-threading and socket
 			port: The port number to connect/listen to new connections.
 			q: A shared queue containing messages (in binary data type) to be sent.
         """
-		pass
-      
+		self.host  = host
+        self.port = port
+        self.queue = q
+
+    def bind(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(self.host, self.port)
+        
+    
     def run(self):
         """
         Gets messages from the shared queue and send them.
@@ -69,7 +100,16 @@ class TCPSender(): #inherit multi-threading and socket
 					loop until the queue is empty:
 						send the oldest message in the queue.
         """
-		pass
+        thread.start_new_thread(_run())
+	
+    def _run(self):
+        while not self.stop:
+            self.bind()
+            self.sock.listen(20)
+            self.sock.accept()
+            while not self.stop:
+                while q:
+                    sock.send(q.dequeue)
 
 def main():
 	pass
