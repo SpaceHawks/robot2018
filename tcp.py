@@ -10,13 +10,6 @@ Your duties include:
 Requrement:
 	Limit bandwith usage to less than 50 kilobits/second. We lose 1 point for each 50 kb/s of average bandwith.
 	Utilize multi-threading. The threads must be closed immediately if a stop signal is triggered.
-	
-Coding notes:
-	Corlaborate with your teammates.
-	Document your codes well so other teams will understand it.
-	Make frequent Git commits.
-	Feel free to add addition functions if you need to.
-	Write your own test program.
 """
 import socket
 import thread
@@ -58,8 +51,8 @@ class TCPReceiver(): #inherit multi-threading and socket
         """
         thread.start_new_thread( _run )
 
-    def _run(self)
-		self.connect()
+    def _run(self):
+	    self.connect()
         while(not self.stop):
             
             data = self.sock.recieve()
@@ -68,6 +61,14 @@ class TCPReceiver(): #inherit multi-threading and socket
             else:
                 print("error occured, reconnecting...")
                 self.connect(self.receiver_host, self.receiver_port)
+    def stop():
+        """
+        Safely exit the run() function so this thread can be joint to the main thread. The run() funcitons should have some lines to close the socket and release resources.
+
+        Implimentation:
+			simply switch self.stop to true.
+        """
+        pass
 
 class TCPSender(): #inherit multi-threading and socket
     """
@@ -89,7 +90,6 @@ class TCPSender(): #inherit multi-threading and socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(self.host, self.port)
         
-    
     def run(self):
         """
         Gets messages from the shared queue and send them.
@@ -110,6 +110,15 @@ class TCPSender(): #inherit multi-threading and socket
             while not self.stop:
                 while q:
                     sock.send(q.dequeue)
+    
+    def stop():
+        """
+        Safely exit the run() function so this thread can be joint to the main thread. The run() funcitons should have some lines to close the socket and release resources.
+
+        Implimentation:
+			simply switch self.stop to true.
+        """
+        pass
 
 def main():
 	pass
