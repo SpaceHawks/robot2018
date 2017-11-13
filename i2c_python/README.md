@@ -5,7 +5,7 @@
 4. Feel free to add additional functions if you need to.
 5. Write your own test program.
 
-# TCP TEAM
+# I2C TEAM
 ## Responsibilities
 I2C team is responsible for the wired communication between all devices that are capable of I2C, which as Arduino, Raspberry Pi, and various sensors.
 

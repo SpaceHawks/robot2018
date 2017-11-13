@@ -76,6 +76,6 @@ typedef void *__builtin_va_list;
 #define pgm_read_float(address_short) float()
 #define pgm_read_ptr(address_short)   short()
 
-#include "arduino-i2c.ino"
+#include "i2c_arduino.ino"
 #endif
 #endif

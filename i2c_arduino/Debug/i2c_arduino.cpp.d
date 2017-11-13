@@ -1,5 +1,5 @@
-C:\Users\Hieu\ Nguyen\AppData\Local\Temp\VMBuilds\arduino-i2c\uno\Debug\arduino-i2c.cpp.o: \
- C:\Users\Hieu\ Nguyen\AppData\Local\Temp\VMBuilds\arduino-i2c\uno\Debug\arduino-i2c.cpp \
+C:\Users\Hieu\ Nguyen\AppData\Local\Temp\VMBuilds\i2c_arduino\uno\Debug\i2c_arduino.cpp.o: \
+ C:\Users\Hieu\ Nguyen\AppData\Local\Temp\VMBuilds\i2c_arduino\uno\Debug\i2c_arduino.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WCharacter.h \

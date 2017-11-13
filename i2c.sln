@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "arduino-i2c", "arduino-i2c\arduino-i2c.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "i2c_arduino", "i2c_arduino\i2c_arduino.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "pc-i2c", "pc-i2c\pc-i2c.pyproj", "{29284342-0E35-4DE2-B839-D80C6B1ED00D}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "i2c_python", "i2c_python\i2c_python.pyproj", "{5CD38E81-11F2-4722-8E58-5BC2EDDD3D62}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,10 +21,10 @@ Global
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|Any CPU.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
-		{29284342-0E35-4DE2-B839-D80C6B1ED00D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{29284342-0E35-4DE2-B839-D80C6B1ED00D}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{29284342-0E35-4DE2-B839-D80C6B1ED00D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{29284342-0E35-4DE2-B839-D80C6B1ED00D}.Release|x86.ActiveCfg = Release|Any CPU
+		{5CD38E81-11F2-4722-8E58-5BC2EDDD3D62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CD38E81-11F2-4722-8E58-5BC2EDDD3D62}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5CD38E81-11F2-4722-8E58-5BC2EDDD3D62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CD38E81-11F2-4722-8E58-5BC2EDDD3D62}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
