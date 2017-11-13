@@ -13,6 +13,7 @@
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId />
     <IsWindowsApplication>False</IsWindowsApplication>
+    <Name>tcp</Name>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />

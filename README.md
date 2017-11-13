@@ -1,4 +1,4 @@
-# Coding recommendations:
+# Coding recommendations
 1. Collaborate with your teammates.
 2. Document your codes well so other teams will understand it.
 3. Make frequent Git commits.
