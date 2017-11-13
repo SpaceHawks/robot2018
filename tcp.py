@@ -28,7 +28,7 @@ class TCPReceiver(): #inherit multi-threading and socket
         self.receiver_host = host
         self.receiver_port = port
         self.queue = queue
-		
+
     def connect(self):
         if sock is None:
             self.sock = socket.socket(
@@ -52,7 +52,7 @@ class TCPReceiver(): #inherit multi-threading and socket
         thread.start_new_thread( _run )
 
     def _run(self):
-	    self.connect()
+        self.connect()
         while(not self.stop):
             
             data = self.sock.recieve()
@@ -82,7 +82,7 @@ class TCPSender(): #inherit multi-threading and socket
 			port: The port number to connect/listen to new connections.
 			q: A shared queue containing messages (in binary data type) to be sent.
         """
-		self.host  = host
+        self.host  = host
         self.port = port
         self.queue = q
 
