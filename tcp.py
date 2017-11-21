@@ -20,7 +20,8 @@ Coding notes:
 """
 
 import socket
-import thread
+from concurrent.futures import thread
+
 class TCPReceiver(): #inherit multi-threading and socket
     """
     A thread that listens to oncoming messages.
@@ -33,10 +34,10 @@ class TCPReceiver(): #inherit multi-threading and socket
 			        port: The port number to connect/listen to new connections.
 			        q: A shared queue containing future messages (in binary data type) from the sender.
 		        """
-        self.receiver_host = host
-        self.receiver_port = port
-        self.queue = q
-		self.stop = False
+       self.receiver_host = host
+       self.receiver_port = port
+       self.queue = q
+	   self.stop = False
 
     def connect(self):
         if sock is None:
@@ -66,12 +67,12 @@ class TCPReceiver(): #inherit multi-threading and socket
 		self.connect()
         while(not self.stop):
             
-            data = self.sock.recieve()
-            if(data is not None):
-                self.q.enqueue(data)
-            else:
-                print("error occured, reconnecting...")
-                self.connect(self.receiver_host, self.receiver_port)
+           data = self.sock.recieve()
+           if(data is not None):
+               self.q.enqueue(data)
+           else:
+               print("error occured, reconnecting...")
+               self.connect(self.receiver_host, self.receiver_port)
 
 class TCPSender(): #inherit multi-threading and socket
     """
