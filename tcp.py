@@ -34,10 +34,11 @@ class TCPReceiver(): #inherit multi-threading and socket
 			        port: The port number to connect/listen to new connections.
 			        q: A shared queue containing future messages (in binary data type) from the sender.
 		        """
-       self.receiver_host = host
-       self.receiver_port = port
-       self.queue = q
-	   self.stop = False
+        self.stop = False
+        self.receiver_host = host
+        self.receiver_port = port
+        self.queue = q
+	    
 
     def connect(self):
         if sock is None:
@@ -49,6 +50,7 @@ class TCPReceiver(): #inherit multi-threading and socket
             self.sock.connect((self.receiver_host, self.receiver_port))
         except:
             print('connction failed')
+
     def stop():
         self.stop = True
 
@@ -62,9 +64,11 @@ class TCPReceiver(): #inherit multi-threading and socket
 				            In case the connection is broken for any reason, close all existing connection, then connect/listen to another one.
         """
         thread.start_new_thread( _run )
-
-    def _run(self)
-		self.connect()
+        
+    def _run(self):
+	    
+        self.connect()
+        
         while(not self.stop):
             
            data = self.sock.recieve()
@@ -73,7 +77,7 @@ class TCPReceiver(): #inherit multi-threading and socket
            else:
                print("error occured, reconnecting...")
                self.connect(self.receiver_host, self.receiver_port)
-
+    
 class TCPSender(): #inherit multi-threading and socket
     """
 	    A thread that send out messages.
@@ -84,10 +88,12 @@ class TCPSender(): #inherit multi-threading and socket
         Args:
 			            host: the ip address of the current devices or the target device.
 			            port: The port number to connect/listen to new connections.
-			            q: A shared queue containing messages (in binary data type) to be sent.
+	   		            q: A shared queue containing messages (in binary data type) to be sent.
         """
-		self.host  = host
+
+
         self.port = port
+        self.host = host
         self.queue = q
         self.stop = False
 
