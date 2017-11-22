@@ -40,7 +40,6 @@ class TCPReceiver(): #inherit multi-threading and socket
         self.receiver_port = port
         self.queue = q
 	    
-
     def connect(self):
         if sock is None:
             self.sock = socket.socket(
@@ -128,12 +127,13 @@ class TCPSender(): #inherit multi-threading and socket
                     sock.send(q.get)
             print('sender stopeed')
 def main():
+    import time
     q = Queue()
-    receiver = TCPReceiver('127.0.0.1', 5005, q)
-    sender = TCPSender('127.0.0.1', 5005, q)
+    receiver = TCPReceiver(host = '127.0.0.1', port = 5005, q = q)
+    sender = TCPSender(host = '127.0.0.1', port = 5005, q = q)
 
-    receiver.run()
-    sender.run()
+    receiver.start()
+    sender.start()
 if __name__ == '__main__':
     main()
         
