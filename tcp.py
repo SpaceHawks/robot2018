@@ -101,7 +101,7 @@ class TCPSender(): #inherit multi-threading and socket
 						send the oldest message in the queue.
         """
         thread.start_new_thread(_run())
-	
+
     def _run(self):
         while not self.stop:
             self.bind()
