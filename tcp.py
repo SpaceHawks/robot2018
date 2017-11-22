@@ -19,6 +19,7 @@ Coding notes:
 	Write your own test program.
 """
 
+from queue import Queue
 import socket
 from concurrent.futures import thread
 
@@ -63,7 +64,7 @@ class TCPReceiver(): #inherit multi-threading and socket
 				            Put any imcoming messages to the queue.
 				            In case the connection is broken for any reason, close all existing connection, then connect/listen to another one.
         """
-        thread.start_new_thread( _run )
+        thread.start_new_thread( self._run() )
         
     def _run(self):
 	    
@@ -73,7 +74,7 @@ class TCPReceiver(): #inherit multi-threading and socket
             
            data = self.sock.recieve()
            if(data is not None):
-               self.q.enqueue(data)
+               self.q.put(data)
            else:
                print("error occured, reconnecting...")
                self.connect(self.receiver_host, self.receiver_port)
@@ -115,7 +116,7 @@ class TCPSender(): #inherit multi-threading and socket
 					                loop until the queue is empty:
 						                send the oldest message in the queue.
         """
-        thread.start_new_thread(_run())
+        thread.start_new_thread(self._run())
 	
     def _run(self):
         while not self.stop:
@@ -124,11 +125,15 @@ class TCPSender(): #inherit multi-threading and socket
             self.sock.accept()
             while not self.stop:
                 while q:
-                    sock.send(q.dequeue)
+                    sock.send(q.get)
             print('sender stopeed')
 def main():
-	pass
+    q = Queue()
+    receiver = TCPReceiver('127.0.0.1', 5005, q)
+    sender = TCPSender('127.0.0.1', 5005, q)
 
+    receiver.run()
+    sender.run()
 if __name__ == '__main__':
     main()
         
