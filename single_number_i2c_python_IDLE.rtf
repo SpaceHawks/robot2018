@@ -11,11 +11,9 @@ def readNumber():
   number = bus.read_byte(address)
   return number
 
-var = input(“Enter a number: “)
-
-writeNumber(var)
-print (“RPI: Hi Arduino, I sent you “, var)
-time.sleep(1)
-
-number = readNumber()
-print (“Arduino: Hey RPI, I received “, number)
+for i in range(127):
+  writeNumber(i)
+  print (“RPI: Hi Arduino, I sent you “, i)
+  time.sleep(1)
+  number = readNumber()
+  print (“Arduino: Hey RPI, I received “, number)
