@@ -4,8 +4,7 @@
 int number = 0;
 
 void setup() {
-Serial.begin(9600); // start serial for output
-// initialize i2c as slave
+Serial.begin(9600);
 Wire.begin(SLAVE_ADDRESS);
 
 // define callbacks for i2c communication
