@@ -6,7 +6,6 @@ int number = 0;
 void setup() {
 Serial.begin(9600);
 Wire.begin(SLAVE_ADDRESS);
-
 // define callbacks for i2c communication
 Wire.onReceive(receiveData);
 Wire.onRequest(sendData);
