@@ -23,7 +23,8 @@ void setup() {
 
 void loop() {
 	ST.motor(1, pid.getPower(enCounter));
-//	{@Plot.Power.Power.Green pid.power}, { @Plot.Speed.currentSpeed.Red pid.currentSpeed }, { @Plot.Speed.setSpeed.Green pid.setSpeed }, { @Plot.Constant.kp.Blue pid.kp }, { @Plot.Constant.ki.Red pid.ki }, { @Plot.Constant.kd.Green pid.kd }, pid.kp is{ pid.kp = ? }, pid.ki is{ pid.ki = ? }, pid.kd is{ pid.kd = ? }, pid.power is{ pid.power = ? }, pid.setSpeed is{ pid.setSpeed = ? }
+// {@Plot.Power.Power.Green pid.getPower(enCounter)}, {@Plot.Speed.currentSpeed.Red pid.currentVal}, {@Plot.Speed.setSpeed.Green pid.pid.targetVal}, {@Plot.Constant.kp.Blue pid.kp}, {@Plot.Constant.ki.Red pid.ki}, {@Plot.Constant.kd.Green pid.kd}, pid.kp is {pid.kp=?}, pid.ki is {pid.ki=?}, pid.kd is {pid.kd=?}, pid.power is {pid.power=?}, pid.pid.targetVal is {pid.pid.targetVal =?}
+
 }
 
 float map1(long x, long in_min, long in_max, float out_min, float out_max){
