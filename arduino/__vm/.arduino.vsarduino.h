@@ -12,9 +12,10 @@
 
 #ifndef _VSARDUINO_H_
 #define _VSARDUINO_H_
+#define _VMDEBUG 1
 #define printf iprintf
 #define F_CPU 84000000L
-#define ARDUINO 10804
+#define ARDUINO 10805
 #define ARDUINO_SAM_DUE
 #define ARDUINO_ARCH_SAM
 #define __SAM3X8E__
@@ -233,6 +234,7 @@ __attribute__((always_inline)) static __INLINE void __set_PRIMASK(uint32_t priMa
 }
 
 
-#include "motor.ino"
+#include "arduino.ino"
+#include "LinearActuator.ino"
 #endif
 #endif
