@@ -1,5 +1,6 @@
 {@Plot.Power.Power.Green power}, {@Plot.Speed.currentSpeed.Red currentSpeed}, {@Plot.Speed.setspeed.Blue setspeed}, {@Plot.Speed.Error.Yellow error}, {@Plot.Constant.kp.Blue kp}, {@Plot.Constant.ki.Red ki}, {@Plot.Constant.kd.Green kd}, kp is {kp=?}, ki is {ki=?}, kd is {kd=?}, power is {power=?}, setspeed is {setspeed =?}, goalSpeed is {goalSpeed =?}
 
+// For Cim Motor best performance
 float kp = 0.03;
 float ki = 0.1;
 float kd = 0.05
@@ -11,3 +12,6 @@ PID class:
 
 linear Actuator
 {@Plot.Pos.currentPos.Green Input}, {@Plot.Pos.targetPos.Blue Setpoint}, {@Plot.Power.Power.Red Output}, {@Plot.Constant.kp.Blue kp}, {@Plot.Constant.ki.Red ki}, {@Plot.Constant.kd.Green kd},kp is {kp=?}, ki is {ki=?}, kd is {kd=?}, Output is {Output=?}, Setpoint is {Setpoint =?}
+
+//PID library Download link
+https://playground.arduino.cc/Code/PIDLibrary
