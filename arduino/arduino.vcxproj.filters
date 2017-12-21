@@ -15,10 +15,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="motor.ino" />
+    <None Include="arduino.ino" />
+    <None Include="LinearActuator.ino" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.motor.vsarduino.h">
+    <ClInclude Include="__vm\.arduino.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
