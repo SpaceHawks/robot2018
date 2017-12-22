@@ -1,9 +1,12 @@
 //#include "Sabertooth.ino"
 void setup() {
-	LinearActuatorSetup();
+	//motorSetup();
+	//kSetup();
+	aSetup();
 }
-
 void loop() {
-	LinearActuatorLoop();
+	//motorLoop();
+	//kLoop();
+	aLoop();
 }
 

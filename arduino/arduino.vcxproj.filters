@@ -16,6 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="arduino.ino" />
+    <None Include="Motor.ino" />
+    <None Include="Actuator_DefaultPID_.ino" />
     <None Include="LinearActuator.ino" />
   </ItemGroup>
   <ItemGroup>

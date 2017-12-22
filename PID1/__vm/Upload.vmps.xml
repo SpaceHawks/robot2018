@@ -9,27 +9,52 @@
       <VCCodeMacros />
     </VCCodeModel>
     <BreakPoints>
-      <BreakPoint Index="1" Name="PID1.ino, line 25" Id="66dcf3a1-b982-467f-8205-98ad3d7ff016" Enabled="1" Message="{@Plot.Power.Power.Green pid.getPower(enCounter)}" MessageTextType="2" PreProcessedMessage="{0}" Condition="" ConditionType="1" CurrentHits="0" File="c:\users\yu zhe\source\repos\x\pid1\pid1.ino" FileLine="25" FileColumn="1" FunctionName="loop()" FunctionLineOffset="2" FunctionColumnOffset="1" HitCountTarget="1" HitCountType="1" Language="C++" LocationType="3" Tag="&lt;vmbp Id='55fea18b-8b95-49ec-92e9-5cad8e293293'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="0">
-        <Source>18		pinMode(button, INPUT);
-19		attachInterrupt(digitalPinToInterrupt(button), speedchg, RISING);
-20		Serial.begin(9600);
-21	
-22	}
-23	
-24	void loop() {
---&gt;25		ST.motor(1, pid.getPower(enCounter));
-26	// {@Plot.Power.Power.Green pid.getPower(enCounter)}, {@Plot.Speed.currentSpeed.Red pid.currentVal}, {@Plot.Speed.setSpeed.Green pid.pid.targetVal}, {@Plot.Constant.kp.Blue pid.kp}, {@Plot.Constant.ki.Red pid.ki}, {@Plot.Constant.kd.Green pid.kd}, pid.kp is {pid.kp=?}, pid.ki is {pid.ki=?}, pid.kd is {pid.kd=?}, pid.power is {pid.power=?}, pid.pid.targetVal is {pid.pid.targetVal =?}
-27	
-28	}
-29	
-30	float map1(long x, long in_min, long in_max, float out_min, float out_max){
-31	  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-32	}
-33	
-34	void speedchg() {
+      <BreakPoint Index="1" Name="arduino.ino, line 6" Id="632d6600-3149-451b-aef3-884a8526e2da" Enabled="1" Message="  Millis is currently {millis()}.&#xD;&#xA;    This tutorial debug trace point prints a message every 250ms&#xD;&#xA;    The break point property called 'Continue Execution' controls if code should pause here and wait for you to click 'Continue'.&#xD;&#xA;    To stop debug, click stop debugging or close/stop the serial monitor.&#xD;&#xA;    When debug ends, serial debug will continue to break/pause the mcu or transmit trace message, wifi debug will not.&#xD;&#xA;    This breakpoint exists at the start of the loop() function, where you see a red dot.&#xD;&#xA;    The red dot is a ‘breakpoint’. Edit the properties of a breakpoint by right clicking it or open the 'Debug&gt;Other Windows&gt;Breakpoint List'&#xD;&#xA;    This breakpoint is automatically set by Visual Micro to demonstrate the Arduino debugger.&#xD;&#xA;    Add your own breakpoints by placing the cursor on any code line and pressing F9. Press F9 again to delete the breakpoint.&#xD;&#xA;    Read more about the Visual Micro debugger at http://www.visualmicro.com/page/Debugging-for-Arduino.aspx&#xD;&#xA;    Take some time to learn about debugging, it’s worth it!&#xD;&#xA;    To switch the demo breakpoint and other tips off, deselect Visual Micro&gt;Tutorial Mode.&#xD;&#xA;    Switch debugging off by changing from tool bar (Configuratin) from 'Debug' to 'Release'" MessageTextType="0" PreProcessedMessage="  Millis is currently {0}.&#xD;&#xA;    This tutorial debug trace point prints a message every 250ms&#xD;&#xA;    The break point property called 'Continue Execution' controls if code should pause here and wait for you to click 'Continue'.&#xD;&#xA;    To stop debug, click stop debugging or close/stop the serial monitor.&#xD;&#xA;    When debug ends, serial debug will continue to break/pause the mcu or transmit trace message, wifi debug will not.&#xD;&#xA;    This breakpoint exists at the start of the loop() function, where you see a red dot.&#xD;&#xA;    The red dot is a ‘breakpoint’. Edit the properties of a breakpoint by right clicking it or open the 'Debug&gt;Other Windows&gt;Breakpoint List'&#xD;&#xA;    This breakpoint is automatically set by Visual Micro to demonstrate the Arduino debugger.&#xD;&#xA;    Add your own breakpoints by placing the cursor on any code line and pressing F9. Press F9 again to delete the breakpoint.&#xD;&#xA;    Read more about the Visual Micro debugger at http://www.visualmicro.com/page/Debugging-for-Arduino.aspx&#xD;&#xA;    Take some time to learn about debugging, it’s worth it!&#xD;&#xA;    To switch the demo breakpoint and other tips off, deselect Visual Micro&gt;Tutorial Mode.&#xD;&#xA;    Switch debugging off by changing from tool bar (Configuratin) from 'Debug' to 'Release'" Condition="millis()&gt;0 || millis()&gt;1" ConditionType="1" CurrentHits="0" File="c:\users\yu zhe\source\repos\x\arduino\arduino.ino" FileLine="6" FileColumn="1" FunctionName="" FunctionLineOffset="1" FunctionColumnOffset="1" HitCountTarget="250" HitCountType="4" Language="C++" LocationType="3" Tag="&lt;vmbp Id='632d6600-3149-451b-aef3-884a8526e2da'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="0">
+        <Source>1	//#include "Sabertooth.ino"
+2	void setup() {
+3		MotorSetup();
+4	}
+5	
+--&gt;6	void loop() {
+7		MotorLoop();
+8	}
+9	
 </Source>
         <MessageVariables>
-          <MessageVariable Name="@Plot.Power.Power.Green pid.getPower(enCounter)" Index="1" />
+          <MessageVariable Name="millis()" Index="1" />
+        </MessageVariables>
+      </BreakPoint>
+      <BreakPoint Index="2" Name="Motor.ino, line 33" Id="77e55429-0e1e-404d-84ae-7f6175adce1e" Enabled="1" Message="{@Plot.Pos.currentSpeed.Green Input}, {@Plot.Pos.targetSpeed.Blue Setpoint}, {@Plot.Power.Power.Red Output}, {@Plot.Constant.kp.Blue kp}, {@Plot.Constant.ki.Red ki}, {@Plot.Constant.kd.Green kd},kp is {kp=?}, ki is {ki=?}, kd is {kd=?}, Power is {Output=?}, Setpoint is {Setpoint =?}" CanWriteVars="1" MessageTextType="0" PreProcessedMessage="{0}, {1}, {2}, {3}, {4}, {5},kp is {6}, ki is {7}, kd is {8}, Power is {9}, Setpoint is {10}" Condition="" ConditionType="1" CurrentHits="0" File="c:\users\yu zhe\source\repos\x\arduino\motor.ino" FileLine="33" FileColumn="1" FunctionName="MotorLoop()" FunctionLineOffset="5" FunctionColumnOffset="1" HitCountTarget="1" HitCountType="1" Language="C++" LocationType="3" Tag="&lt;vmbp Id='77e55429-0e1e-404d-84ae-7f6175adce1e'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="0">
+        <Source>26		myPID.SetSampleTime(300); // 300ms works fine for Linear Actuator
+27	}
+28	
+29	void MotorLoop() {
+30		myPID.SetTunings(kp, ki, kd);
+31		if (myPID.Compute() == true) {
+32			ST.motor(1, Output);
+--&gt;33			Input = 0;
+34		}
+35	
+36	//	if (abs(Input - Setpoint) &lt; tolerance) kp = 0.1;
+37	//	else kp = 3;
+38		//delay(300);
+39		//{@Plot.Pos.currentSpeed.Green Input}, {@Plot.Pos.targetSpeed.Blue Setpoint}, {@Plot.Power.Power.Red Output}, {@Plot.Constant.kp.Blue kp}, {@Plot.Constant.ki.Red ki}, {@Plot.Constant.kd.Green kd},kp is {kp=?}, ki is {ki=?}, kd is {kd=?}, Power is {Output=?}, Setpoint is {Setpoint =?}
+40	}
+41	
+42	void count() {
+</Source>
+        <MessageVariables>
+          <MessageVariable Name="@Plot.Pos.currentSpeed.Green Input" Index="1" />
+          <MessageVariable Name="@Plot.Pos.targetSpeed.Blue Setpoint" Index="2" />
+          <MessageVariable Name="@Plot.Power.Power.Red Output" Index="3" />
+          <MessageVariable Name="@Plot.Constant.kp.Blue kp" Index="4" />
+          <MessageVariable Name="@Plot.Constant.ki.Red ki" Index="5" />
+          <MessageVariable Name="@Plot.Constant.kd.Green kd" Index="6" />
+          <MessageVariable CanWriteVar="1" Name="kp" Index="7" />
+          <MessageVariable CanWriteVar="1" Name="ki" Index="8" />
+          <MessageVariable CanWriteVar="1" Name="kd" Index="9" />
+          <MessageVariable CanWriteVar="1" Name="Output" Index="10" />
+          <MessageVariable CanWriteVar="1" Name="Setpoint " Index="11" />
         </MessageVariables>
       </BreakPoint>
     </BreakPoints>
