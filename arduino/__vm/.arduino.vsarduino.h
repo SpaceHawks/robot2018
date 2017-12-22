@@ -78,7 +78,5 @@ typedef void *__builtin_va_list;
 
 #include "arduino.ino"
 #include "Actuator_DefaultPID_.ino"
-#include "LinearActuator.ino"
-#include "Motor.ino"
 #endif
 #endif
