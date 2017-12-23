@@ -77,7 +77,7 @@
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Actuator_DefaultPID_.ino">
+    <None Include="Actuator_Kangaroo.ino">
       <FileType>CppCode</FileType>
     </None>
     <None Include="arduino.ino">

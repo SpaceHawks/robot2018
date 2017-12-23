@@ -16,7 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="arduino.ino" />
-    <None Include="Actuator_DefaultPID_.ino" />
+    <None Include="Actuator_Kangaroo.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.arduino.vsarduino.h">
