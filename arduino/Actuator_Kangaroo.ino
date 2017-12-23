@@ -3,7 +3,7 @@
 // Load: No load
 // Motor Driver: Sabertooth 2x25
 // Absolute range: [100, 4494]
-// Safe range: [100, 4451]
+// Safe range: [143, 4450]
 
 #include <SoftwareSerial.h>
 #include <Kangaroo.h>
@@ -17,10 +17,11 @@ KangarooSerial  K(SerialPort);
 KangarooChannel K1(K, '1');
 KangarooChannel K2(K, '2');
 KangarooStatus absP;
-long Pos =2000;
+long Pos =143;
 long lastPos;
 long maximum;
 long minimum;
+int Speed = 500;
 
 void aSetup()
 {
@@ -40,7 +41,7 @@ void aLoop()
 	absP = K1.getP();
 	
 	if (Pos != lastPos)
-			K1.p(Pos,500);
+			K1.p(Pos,Speed);
 			lastPos = Pos;
 
 	if (K1.getP().done())
@@ -51,6 +52,6 @@ void aLoop()
 //	Serial.println(absP.value());
 	delay(100);
 //	K1.p(maximum);
-	//{@Plot.Position.SetPosition.Red Pos}, {@Plot.Position.CurrentPosition.Green absP.value()}, Pos is {Pos =?}
+	//{@Plot.Position.SetPosition.Red Pos}, {@Plot.Position.CurrentPosition.Green absP.value()}, Pos is {Pos =?}, Speed is {Speed =?}
 	
 }
