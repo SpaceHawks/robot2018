@@ -17,6 +17,7 @@
   <ItemGroup>
     <None Include="arduino.ino" />
     <None Include="Actuator_Kangaroo.ino" />
+    <None Include="i2c.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.arduino.vsarduino.h">

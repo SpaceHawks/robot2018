@@ -17,11 +17,12 @@ KangarooSerial  K(SerialPort);
 KangarooChannel K1(K, '1');
 KangarooChannel K2(K, '2');
 KangarooStatus absP;
-long Pos =143;
+long Pos;
 long lastPos;
 long maximum;
 long minimum;
 int Speed = 500;
+KangarooStatus LA_status;
 
 void aSetup()
 {
@@ -32,26 +33,28 @@ void aSetup()
 	K1.home().wait();
 	minimum = K1.getMin().value();
 	maximum = K1.getMax().value();
-//	Serial.begin(9600);
-	
 }
 
 void aLoop()
 {
-	absP = K1.getP();
-	
-	if (Pos != lastPos)
-			K1.p(Pos,Speed);
-			lastPos = Pos;
-
-	if (K1.getP().done())
+	if (Pos != lastPos) {
+		K1.p(Pos, Speed);
+		lastPos = Pos;
+	}
+	LA_status = K1.getP();
+	if (LA_status.done())
 		K1.powerDown();
 	
-	Serial.println("Min :"+ String(minimum)+ " Max :" + String(maximum) + " Current; "+ String(absP.value()));
+	//Serial.println("Min :"+ String(minimum)+ " Max :" + String(maximum) + " Current; "+ String(absP.value()));
 
-//	Serial.println(absP.value());
-	delay(100);
+//	Serial.println(abs.value());
+
 //	K1.p(maximum);
 	//{@Plot.Position.SetPosition.Red Pos}, {@Plot.Position.CurrentPosition.Green absP.value()}, Pos is {Pos =?}, Speed is {Speed =?}
 	
+}
+
+int getPos() {
+
+	return K1.getP().value();
 }
