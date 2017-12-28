@@ -29,12 +29,13 @@ class RMCKangaroo
 	 long min2;
 	 int speed1;
 	 int speed2;
-	 KangarooStatus *status1;
-	 KangarooStatus *status2;
+	 KangarooStatus &status1;
+	 KangarooStatus &status2;
 
  public:
 	void init();
-	RMCKangaroo(txPin, rxPin);
+	RMCKangaroo();
+	RMCKangaroo(int txPin, int rxPin);
 	void loop();
 };
 #endif

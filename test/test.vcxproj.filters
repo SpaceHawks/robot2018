@@ -15,19 +15,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="arduino.ino" />
+    <None Include="test.ino" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.arduino.vsarduino.h">
+    <ClInclude Include="__vm\.test.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RMCKangaroo1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="RMCKangaroo1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

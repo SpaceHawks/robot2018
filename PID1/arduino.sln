@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2002
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PID1", "PID1.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "arduino", "..\arduino\arduino.vcxproj", "{0998FB4A-4F2F-4A1B-8E8E-F4E93BC6FFBD}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Server", "Server\Server.pyproj", "{239FD11A-1E25-48F3-A9D2-30805A43DBF8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "..\test\test.vcxproj", "{9C855975-72B5-4441-BC67-ADC772564D8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,12 @@ Global
 		{239FD11A-1E25-48F3-A9D2-30805A43DBF8}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{239FD11A-1E25-48F3-A9D2-30805A43DBF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{239FD11A-1E25-48F3-A9D2-30805A43DBF8}.Release|x86.ActiveCfg = Release|Any CPU
+		{9C855975-72B5-4441-BC67-ADC772564D8E}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{9C855975-72B5-4441-BC67-ADC772564D8E}.Debug|x86.ActiveCfg = Debug|Win32
+		{9C855975-72B5-4441-BC67-ADC772564D8E}.Debug|x86.Build.0 = Debug|Win32
+		{9C855975-72B5-4441-BC67-ADC772564D8E}.Release|Any CPU.ActiveCfg = Release|Win32
+		{9C855975-72B5-4441-BC67-ADC772564D8E}.Release|x86.ActiveCfg = Release|Win32
+		{9C855975-72B5-4441-BC67-ADC772564D8E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
