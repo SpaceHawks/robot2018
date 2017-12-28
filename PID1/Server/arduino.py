@@ -1,4 +1,5 @@
 """
+Arduino Class
 #have to run 'sudo apt-get install python-smbus'
 #in Terminal to install smbus
 import smbus as smbus
@@ -7,8 +8,6 @@ import smbus as smbus
 commands:
 1: drive motors
 """
-
-
 
 import smbus2
 class Arduino(smbus2.SMBus):
@@ -24,7 +23,7 @@ class Arduino(smbus2.SMBus):
         '''
 
         super().__init__(1)
-        self.i2cAddress=i2cAddress
+        self.i2cAddress=i2cAddress  
 
     def write(self, command, data):
         '''

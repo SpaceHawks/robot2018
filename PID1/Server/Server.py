@@ -1,5 +1,8 @@
 from arduino import *
 import time
+import motorControlGui
+import sys
+from PyQt5 import QtCore, QtGui, QtWidgets
 arduino = Arduino(i2cAddress = 7)
 
 import RPi.GPIO as GPIO
@@ -25,6 +28,36 @@ class Timer:
         """
         return (time.time() - self.startTime)
 
+def motorLeft(speed): #Calling for left motor
+    ui.numberDisplayTopLeft.display(speed)
+    arduino.motor(1, speed)
+
+def motorRight(speed): #Calling for left motor
+    ui.numberDisplayTopRight.display(speed)
+    arduino.motor(2, speed)
+
+def motorMaster(speed): #Calling for left motor 
+    ui.numberDisplayTopMiddle.display(speed)
+    ui.sliderLeft.setValue(speed)
+    ui.sliderRight.setValue(speed)
+    motorLeft(speed)
+    motorRight(speed)
+
+def stop():
+    ui.sliderCenter.setValue(0)
+    motorMaster(0)
+
+    
+app = QtWidgets.QApplication(sys.argv)
+MainWindow = QtWidgets.QMainWindow()
+ui = Ui_MotorWindow()
+ui.setupUi(MainWindow)
+ui.sliderLeft.sliderMoved.connect(lambda: motorLeft(ui.sliderLeft.value())) #function for left slider
+ui.sliderRight.sliderMoved.connect(lambda: motorRight(ui.sliderRight.value())) #function for right slider
+ui.sliderCenter.sliderMoved.connect(lambda: motorMaster(ui.sliderCenter.value())) #function for center slider
+ui.buttonStop.clicked.connect(stop) #Set speed to zero
+MainWindow.show()
+
 timer = Timer()
 while True:
     for i in range(0, 100, 1):
@@ -40,9 +73,16 @@ while True:
         timer.reset()
         while(timer.getTime()<2):
             if(GPIO.input(4) == 1):
-                print(arduino.read(4))
+                data = arduino.read(4)
+                if data[0] == 1:
+                    ui.numberDisplayBottomLeft.display(data[2])
+                elif data[0] == 2:
+                    ui.numberDisplayBottomRight.display(data[2])
+               
                 time.sleep(0.03)
                 break
             else:
                 time.sleep(0.01)
 #arduino.write(4, [1,34,56])
+
+sys.exit(app.exec_())

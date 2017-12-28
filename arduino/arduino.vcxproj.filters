@@ -16,12 +16,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="arduino.ino" />
-    <None Include="Actuator_Kangaroo.ino" />
-    <None Include="i2c.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.arduino.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RMCKangaroo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="RMCKangaroo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
