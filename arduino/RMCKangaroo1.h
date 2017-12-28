@@ -7,10 +7,10 @@ class RMCKangaroo1
 protected:
 	
 public:
-	KangarooChannel &K1;
-	KangarooChannel &K2;
-	long targetVal1;
-	long targetVal2;
+	KangarooChannel *channel1;
+	KangarooChannel *channel2;
+	long targetVal1 = 500;
+	long targetVal2 = 500;
 	long lastVal1;
 	long lastVal2;
 	long max1;
@@ -19,8 +19,8 @@ public:
 	long min2;
 	int speed1;
 	int speed2;
-	KangarooStatus &status1;
-	KangarooStatus &status2;
+	KangarooStatus *status1;
+	KangarooStatus *status2;
 	RMCKangaroo1(int txPin, int rxPin);
 	void loop();
 };

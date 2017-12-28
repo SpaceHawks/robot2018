@@ -7,23 +7,21 @@
 #define I2CAddress 7
 #define LINEAR_ACTUATOR_1 1
 //
-RMCKangaroo1 linearK(11, 10);
-RMCKangaroo1 motorK(22, 23);
+
 
 void setup() {
 	pinMode(4, OUTPUT);
 	digitalWrite(4, HIGH);
 	Serial.begin(9600);
-	i2cSetup();
-	linearK.targetVal1 = 1000;
-	motorK.targetVal1 = 1000;
+	//i2cSetup();
+	RMCKangaroo1 linearK(11, 10);
+	//RMCKangaroo1 motorK(22, 23);
 }
 void loop() {
-	digitalWrite(4, LOW);
-	linearK.loop();
-	motorK.loop();
-	digitalWrite(4, HIGH);
-	delay(100);
+	//linearK.loop();
+	//motorK.loop();
+	//digitalWrite(4, HIGH);
+	//delay(100);
 }
 
 
