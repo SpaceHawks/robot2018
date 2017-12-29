@@ -30,7 +30,23 @@ void RMCKangaroo1::loopP()
 		channel1->powerDown();
 	/*if (status2->done())
 		channel2->powerDown();*/
-	//{@Plot.Position.SetPosition.Red Pos}, {@Plot.Position.CurrentPosition.Green absP.value()}, Pos is {Pos =?}, Speed is {Speed =?}
+}
+
+void RMCKangaroo1::loopS()
+{
+	if (targetVal1 != lastVal1) {
+		channel1->s(targetVal1);
+		lastVal1 = targetVal1;
+	}
+
+	if (targetVal2 != lastVal2) {
+		channel2->s(targetVal2);
+		lastVal2 = targetVal2;
+	}
+
+	status1 = &channel1->getS();
+	//	status2 = &channel2->getS();
+	//We need sensor for channel 2
 }
 
 void RMCKangaroo1::begin() {
@@ -71,7 +87,7 @@ void RMCKangaroo1::setTargetVal2(long val) {
 
 }
 
-void RMCKangaroo1::setSpeed1(long speed)
+void RMCKangaroo1::setSpeed1(long speed) //speed:0-100%
 {
 	if (speed >= 0 && speed <= maxSpeed1) {
 		lastSpeed1 = speed1;
@@ -79,7 +95,7 @@ void RMCKangaroo1::setSpeed1(long speed)
 	}
 }
 
-void RMCKangaroo1::setSpeed2(long speed)
+void RMCKangaroo1::setSpeed2(long speed) //speed:0-100%
 {
 	
 	if (speed >= 0 && speed <= maxSpeed2) {

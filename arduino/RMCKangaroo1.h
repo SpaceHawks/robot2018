@@ -30,6 +30,7 @@ public:
 	long min2;
 	RMCKangaroo1(int rxPin, int txPin);
 	void loopP();
+	void loopS();
 	void begin();
 	void setTargetVal1(long val);
 	void setTargetVal2(long val);
