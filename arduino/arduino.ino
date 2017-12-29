@@ -6,19 +6,27 @@
 #define MESSAGE_LENGTH 8
 #define I2CAddress 7
 #define LINEAR_ACTUATOR_1 1
-//
-
+RMCKangaroo1 linearK(10, 11);
+//RMCKangaroo1 motorK(10, 11);
+long setValue;
 
 void setup() {
 	pinMode(4, OUTPUT);
 	digitalWrite(4, HIGH);
 	Serial.begin(9600);
+	linearK.begin();
+	setValue = linearK.min1;
+	
+	//motorK.begin();
+
 	//i2cSetup();
-	RMCKangaroo1 linearK(11, 10);
-	//RMCKangaroo1 motorK(22, 23);
 }
 void loop() {
-	//linearK.loop();
+	linearK.setTargetVal1(setValue);
+	linearK.loopP();
+	delay(100);
+	//{@Plot.Position.Max.Red linearK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?}, {@Plot.Position.CurrentPos.Blue linearK.status1->value()}
+	//Serial.println(linearK->channel1->getP().done());
 	//motorK.loop();
 	//digitalWrite(4, HIGH);
 	//delay(100);
