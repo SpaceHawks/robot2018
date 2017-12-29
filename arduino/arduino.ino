@@ -9,6 +9,7 @@
 RMCKangaroo1 linearK(10, 11);
 //RMCKangaroo1 motorK(10, 11);
 long setValue;
+long setSpeed=1;
 
 void setup() {
 	pinMode(4, OUTPUT);
@@ -23,9 +24,10 @@ void setup() {
 }
 void loop() {
 	linearK.setTargetVal1(setValue);
+	linearK.setSpeed1(setSpeed);
 	linearK.loopP();
 	delay(100);
-	//{@Plot.Position.Max.Red linearK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?}, {@Plot.Position.CurrentPos.Blue linearK.status1->value()}
+	//{@Plot.Position.Max.Red linearK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?},  setSpeed is {setSpeed =?},{@Plot.Position.CurrentPos.Blue linearK.status1->value()}
 	//Serial.println(linearK->channel1->getP().done());
 	//motorK.loop();
 	//digitalWrite(4, HIGH);

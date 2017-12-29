@@ -9,8 +9,15 @@ protected:
 	long targetVal2;
 	long lastVal1;
 	long lastVal2;
-	int speed1 = 500;
-	int speed2 = 500;
+
+	//Only for Linear Actuator
+	int speed1 = 1;
+	int speed2 = 1;
+	int maxSpeed1;
+	int maxSpeed2;
+	int lastSpeed1;
+	int lastSpeed2;
+
 	KangarooChannel *channel1;
 	KangarooChannel *channel2;
 	SoftwareSerial *SerialPort;
@@ -26,6 +33,8 @@ public:
 	void begin();
 	void setTargetVal1(long val);
 	void setTargetVal2(long val);
+	void setSpeed1(long speed);
+	void setSpeed2(long speed);
 	KangarooStatus *status1;
 	KangarooStatus *status2;
 };

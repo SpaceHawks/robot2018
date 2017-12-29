@@ -16,30 +16,31 @@
           <MessageVariable CanWriteVar="1" Name="Pos " Index="3" />
         </MessageVariables>
       </BreakPoint>
-      <BreakPoint Index="2" Name="arduino.ino, line 27" Id="d93a0c7c-bbc4-4867-a42e-c1d77620df24" Enabled="1" Message="{@Plot.Position.Max.Red linearK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?}, {@Plot.Position.CurrentPos.Blue linearK.status1-&gt;value()}" CanWriteVars="1" MessageTextType="0" PreProcessedMessage="{0}, {1}, setValue is {2}, {3}" Condition="" ConditionType="1" CurrentHits="0" File="c:\users\yu zhe\source\repos\x\arduino\arduino.ino" FileLine="27" FileColumn="1" FunctionName="loop()" FunctionLineOffset="3" FunctionColumnOffset="1" HitCountTarget="1" HitCountType="1" Language="C++" LocationType="3" Tag="&lt;vmbp Id='d93a0c7c-bbc4-4867-a42e-c1d77620df24'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="0">
-        <Source>20		//motorK.begin();
-21	
-22		//i2cSetup();
-23	}
-24	void loop() {
-25		linearK.setTargetVal1(setValue);
-26		linearK.loopP();
---&gt;27		delay(100);
-28		//{@Plot.Position.Max.Red linearK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?}, {@Plot.Position.CurrentPos.Blue linearK.status1-&gt;value()}
-29		//Serial.println(linearK-&gt;channel1-&gt;getP().done());
-30		//motorK.loop();
-31		//digitalWrite(4, HIGH);
-32		//delay(100);
-33	}
-34	
-35	
-36	void i2cSetup() {
+      <BreakPoint Index="2" Name="arduino.ino, line 29" Id="d93a0c7c-bbc4-4867-a42e-c1d77620df24" Enabled="1" Message="{@Plot.Position.Max.Red linearK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?},  setSpeed is {setSpeed =?},{@Plot.Position.CurrentPos.Blue linearK.status1-&gt;value()}" CanWriteVars="1" MessageTextType="0" PreProcessedMessage="{0}, {1}, setValue is {2},  setSpeed is {3},{4}" Condition="" ConditionType="1" CurrentHits="0" File="c:\users\yu zhe\source\repos\x\arduino\arduino.ino" FileLine="29" FileColumn="1" FunctionName="loop()" FunctionLineOffset="3" FunctionColumnOffset="1" HitCountTarget="1" HitCountType="1" Language="C++" LocationType="3" Tag="&lt;vmbp Id='d93a0c7c-bbc4-4867-a42e-c1d77620df24'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="0">
+        <Source>22	
+23		//i2cSetup();
+24	}
+25	void loop() {
+26		linearK.setTargetVal1(setValue);
+27		linearK.setSpeed1(setSpeed);
+28		linearK.loopP();
+--&gt;29		delay(100);
+30		//{@Plot.Position.Max.Red linearK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?},  setSpeed is {setSpeed =?},{@Plot.Position.CurrentPos.Blue linearK.status1-&gt;value()}
+31		//Serial.println(linearK-&gt;channel1-&gt;getP().done());
+32		//motorK.loop();
+33		//digitalWrite(4, HIGH);
+34		//delay(100);
+35	}
+36	
+37	
+38	void i2cSetup() {
 </Source>
         <MessageVariables>
           <MessageVariable Name="@Plot.Position.Max.Red linearK.max1" Index="1" />
           <MessageVariable Name="@Plot.Position.Min.Green linearK.min1" Index="2" />
           <MessageVariable CanWriteVar="1" Name="setValue " Index="3" />
-          <MessageVariable Name="@Plot.Position.CurrentPos.Blue linearK.status1-&gt;value()" Index="4" />
+          <MessageVariable CanWriteVar="1" Name="setSpeed " Index="4" />
+          <MessageVariable Name="@Plot.Position.CurrentPos.Blue linearK.status1-&gt;value()" Index="5" />
         </MessageVariables>
       </BreakPoint>
     </BreakPoints>

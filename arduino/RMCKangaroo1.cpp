@@ -12,12 +12,12 @@ RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin)
 
 void RMCKangaroo1::loopP()
 {
-	if (targetVal1 != lastVal1) {
+	if (targetVal1 != lastVal1 || speed1 != lastSpeed1) {
 		channel1->p(targetVal1, speed1);
 		lastVal1 = targetVal1;
 	}
 
-	if (targetVal2 != lastVal2) {
+	if (targetVal2 != lastVal2 || speed2 != lastSpeed2) {
 		channel2->p(targetVal2, speed2);
 		lastVal2 = targetVal2;
 	}
@@ -32,6 +32,7 @@ void RMCKangaroo1::loopP()
 		channel2->powerDown();*/
 	//{@Plot.Position.SetPosition.Red Pos}, {@Plot.Position.CurrentPosition.Green absP.value()}, Pos is {Pos =?}, Speed is {Speed =?}
 }
+
 void RMCKangaroo1::begin() {
 	SerialPort->begin(9600);
 	SerialPort->listen();
@@ -51,6 +52,11 @@ void RMCKangaroo1::begin() {
 	max2 = absMax2 - safeBound2;
 	setTargetVal1(min1);
 	setTargetVal2(min2);
+	maxSpeed1 = 0.1 * (absMax1 - absMin1);
+	maxSpeed2 = 0.1 * (absMax2 - absMin2);
+	speed1 = maxSpeed1 / 2;
+	speed2 = maxSpeed2 / 2;
+
 }
 
 void RMCKangaroo1::setTargetVal1(long val) {
@@ -63,4 +69,21 @@ void RMCKangaroo1::setTargetVal2(long val) {
 	if (val >= min2 && val <= max2)
 		targetVal2 = val;
 
+}
+
+void RMCKangaroo1::setSpeed1(long speed)
+{
+	if (speed >= 0 && speed <= maxSpeed1) {
+		lastSpeed1 = speed1;
+		speed1 = map(speed, 0, 100, 1, maxSpeed1);
+	}
+}
+
+void RMCKangaroo1::setSpeed2(long speed)
+{
+	
+	if (speed >= 0 && speed <= maxSpeed2) {
+		lastSpeed2 = speed2;
+		speed2 = map(speed, 0, 100, 1, maxSpeed2);
+	}
 }
