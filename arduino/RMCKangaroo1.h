@@ -22,6 +22,8 @@ protected:
 public:
 	long max[DEFAULT_NUMBER_OF_CHANNEL];
 	long min[DEFAULT_NUMBER_OF_CHANNEL];
+	long getMin(int channelName);
+	long getMax(int channelName);
 	RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType);
 	void loop();
 
@@ -29,7 +31,8 @@ public:
 	void setTargetPos(int channelName, long val);
 	void setTargetSpeed(int channelName, long val);
 	void setSpeed(int channelName, long speed);
-
+	void setMotorMaxSpeed(int channelName, long speed);
+	long getCurrentVal(int channelName);
 	int getChannelIndex(int channelName);
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
 	

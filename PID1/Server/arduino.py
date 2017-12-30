@@ -53,6 +53,6 @@ class Arduino(smbus2.SMBus):
 
         Args:
             motorID: the motor to be driven. Values: 1, 2, 3, 4, ...
-            power: power and dirrection of the motor. Values: [-127, 127]
+            power: power and direction of the motor. Values: [-127, 127]
         '''
         self.write(1, [motorID, power])

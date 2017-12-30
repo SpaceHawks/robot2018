@@ -20,17 +20,18 @@ void setup() {
 	digitalWrite(4, HIGH);
 	Serial.begin(9600);
 	motorK.begin();
-	
-	//i2cSetup();
+	motorK.setTargetPos(1, setValue);
+	motorK.setTargetSpeed(3, 50);
+	motorK.setMotorMaxSpeed(3, 20000);
+	i2cSetup();
 }
 void loop() {
-
-	motorK.setTargetPos(1, setValue);
-	motorK.setTargetSpeed(3, setMotorSpeed);
+	digitalWrite(4, LOW);
 	motorK.loop();
+	digitalWrite(4, HIGH);
 	delay(100);
 	//{@Plot.Position.Max.Red motorK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?},  {@Plot.Speed.SetSpeed.Red setMotorSpeed}, {@Plot.Speed.CurrentSpeed.Green motorK.status1->value()}, setMotorSpeed is {setMotorSpeed =?}
-	//{@Plot.Speed.SetSpeed.Red setMotorSpeed}, {@Plot.Speed.CurrentSpeed.Green motorK.status1->value()}, setMotorSpeed is {setMotorSpeed =?}
+
 }
 
 
@@ -49,18 +50,29 @@ void onI2CReceive(int numByte) {
 		message[i] = Wire.read();
 
 	}
-	/*int command = message[0];
+	int command = message[0];
+	int deviceID = message[1];
+	int val = message[2];
+	
 	switch (command)
 	{
 	case 1:
-		linearK.targetVal1 = map(message[2], 0, 100, 143, 4450);
-		break;
-	case 2:
-		motorK.targetVal1 = map(message[2], 0, 100, 143, 4450);
-		break;
+		switch (deviceID)
+		{
+		case 1:
+			motorK.setTargetPos(deviceID, val);
+			Serial.println(val);
+			break;
+		case 3:
+			motorK.setTargetSpeed(deviceID, (signed char)val);
+			break;
+		default:
+			break;
+		}
 	default:
 		break;
-	}*/
+	}
+	
 }
 
 void onI2CRequest() {
