@@ -1,42 +1,37 @@
 #pragma once
 #include <SoftwareSerial.h>
 #include <Kangaroo.h>
-
+#define DEFAULT_NUMBER_OF_CHANNEL 10
 class RMCKangaroo1
 {
 protected:
-	long targetVal1;
-	long targetVal2;
-	long lastVal1;
-	long lastVal2;
-
+	long targetVal[DEFAULT_NUMBER_OF_CHANNEL];
+	long lastVal[DEFAULT_NUMBER_OF_CHANNEL];
+	
 	//Only for Linear Actuator
-	int speed1 = 1;
-	int speed2 = 1;
-	int maxSpeed1;
-	int maxSpeed2;
-	int lastSpeed1;
-	int lastSpeed2;
-
-	KangarooChannel *channel1;
-	KangarooChannel *channel2;
-	SoftwareSerial *SerialPort;
-	KangarooSerial  *K;
+	int linearActuatorSpeed[DEFAULT_NUMBER_OF_CHANNEL];
+	int maxSpeed[DEFAULT_NUMBER_OF_CHANNEL];
+	int lastSpeed[DEFAULT_NUMBER_OF_CHANNEL];
+	int channelIndex[DEFAULT_NUMBER_OF_CHANNEL];
+	KangarooChannel* channel[DEFAULT_NUMBER_OF_CHANNEL];
+	SoftwareSerial* SerialPort;
+	KangarooSerial* K;
+	String channelList;
+	String channelType;
 
 public:
-	long max1;
-	long min1;
-	long max2;
-	long min2;
-	RMCKangaroo1(int rxPin, int txPin);
-	void loopP();
-	void loopS();
+	long max[DEFAULT_NUMBER_OF_CHANNEL];
+	long min[DEFAULT_NUMBER_OF_CHANNEL];
+	RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType);
+	void loop();
+
 	void begin();
-	void setTargetVal1(long val);
-	void setTargetVal2(long val);
-	void setSpeed1(long speed);
-	void setSpeed2(long speed);
-	KangarooStatus *status1;
-	KangarooStatus *status2;
+	void setTargetPos(int channelName, long val);
+	void setTargetSpeed(int channelName, long val);
+	void setSpeed(int channelName, long speed);
+
+	int getChannelIndex(int channelName);
+	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
+	
 };
 
