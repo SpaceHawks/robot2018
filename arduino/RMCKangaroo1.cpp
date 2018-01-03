@@ -27,11 +27,13 @@ RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin, String channelList, String chan
 void RMCKangaroo1::loop()
 {
 	for (int i = 0; i < channelList.length(); i++) {
+		int tempTargetVal = targetVal[i];
+		int tempLASpeed = linearActuatorSpeed[i];
 		if (channelType[i] == 'l') {		
-			if ((targetVal[i] >= min[i] && targetVal[i]<= max[i]) && (targetVal[i] != lastVal[i] || linearActuatorSpeed[i] != lastSpeed[i])) {
-				channel[i]->p(targetVal[i], linearActuatorSpeed[i]);
-				lastVal[i] = targetVal[i];
-				lastSpeed[i] = linearActuatorSpeed[i];
+			if ((tempTargetVal >= min[i] && tempTargetVal<= max[i]) && (tempTargetVal != lastVal[i] || tempLASpeed != lastSpeed[i])) {
+				channel[i]->p(tempTargetVal, tempLASpeed);
+				lastVal[i] = tempTargetVal;
+				lastSpeed[i] = tempLASpeed;
 			}
 
 			status[i] = channel[i]->getP();
@@ -41,9 +43,10 @@ void RMCKangaroo1::loop()
 
 		else if (channelType[i] == 'm') {
 
-			if (targetVal[i] != lastVal[i]) {
-				channel[i]->s(targetVal[i]);
-				lastVal[i] = targetVal[i];
+			if (tempTargetVal != lastVal[i]) {
+				channel[i]->s(tempTargetVal);
+				delay(10);
+				lastVal[i] = tempTargetVal;
 			}
 
 			status[i] = channel[i]->getS();

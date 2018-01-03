@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>239fd11a-1e25-48f3-a9d2-30805a43dbf8</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Server.py</StartupFile>
+    <StartupFile>TCP_server.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -25,11 +25,17 @@
     <Compile Include="arduino.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="client.py" />
+    <Compile Include="constants.py" />
+    <Compile Include="gui.py" />
     <Compile Include="motorControlGui.py" />
     <Compile Include="rplidar1.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Server.py" />
+    <Compile Include="tcp.py" />
+    <Compile Include="TCPWithiPad.py" />
+    <Compile Include="TCP_server.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

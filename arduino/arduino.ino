@@ -13,23 +13,22 @@ RMCKangaroo1 motorK(10, 11, "13", "lm");
 long setValue = 1000;
 long setSpeed=50;
 long setMotorSpeed = 15000;
+long lastVal;
 //At a higher resoultion, speed limit is lower
 
 void setup() {
-	pinMode(4, OUTPUT);
-	digitalWrite(4, HIGH);
 	Serial.begin(9600);
 	motorK.begin();
+	pinMode(4, OUTPUT);
 	motorK.setTargetPos(1, setValue);
 	motorK.setTargetSpeed(3, 50);
 	motorK.setMotorMaxSpeed(3, 20000);
 	i2cSetup();
+	digitalWrite(4, HIGH);
 }
 void loop() {
-	digitalWrite(4, LOW);
+	
 	motorK.loop();
-	digitalWrite(4, HIGH);
-	delay(100);
 	//{@Plot.Position.Max.Red motorK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?},  {@Plot.Speed.SetSpeed.Red setMotorSpeed}, {@Plot.Speed.CurrentSpeed.Green motorK.status1->value()}, setMotorSpeed is {setMotorSpeed =?}
 
 }
@@ -50,24 +49,37 @@ void onI2CReceive(int numByte) {
 		message[i] = Wire.read();
 
 	}
-	int command = message[0];
-	int deviceID = message[1];
-	int val = message[2];
-	
-	switch (command)
+	int systemCommand = message[0];
+	// 1 - from a controller
+	// 2 - from the pi directly
+	// 3 - x
+	int command = message[1];
+	int device = message[2];
+	int value = message[3];
+	switch (systemCommand)
 	{
-	case 1:
-		switch (deviceID)
+	case 0:
+		break;
+	case 1: //pass through
+		switch (command)
 		{
 		case 1:
-			motorK.setTargetPos(deviceID, val);
-			Serial.println(val);
-			break;
-		case 3:
-			motorK.setTargetSpeed(deviceID, (signed char)val);
-			break;
-		default:
-			break;
+			switch (device)
+			{
+			case 1:
+				motorK.setTargetPos(device, value);
+				Serial.println(value);
+				break;
+			case 3:
+		//		if (value != lastVal + 1)
+		//			Serial.print(String(value)+" ");
+					
+				lastVal = value;
+				motorK.setTargetSpeed(device, (signed char)value);
+				break;
+			default:
+				break;
+			}
 		}
 	default:
 		break;
