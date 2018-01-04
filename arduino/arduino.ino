@@ -9,7 +9,7 @@
 /*Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
 */
 
-RMCKangaroo1 motorK(10, 11, "13", "lm");
+RMCKangaroo1 motorK(51, 50, "12", "ll");
 long setValue = 1000;
 long setSpeed=50;
 long setMotorSpeed = 15000;
@@ -19,12 +19,10 @@ long lastVal;
 void setup() {
 	Serial.begin(9600);
 	motorK.begin();
-	pinMode(4, OUTPUT);
-	motorK.setTargetPos(1, setValue);
-	motorK.setTargetSpeed(3, 50);
-	motorK.setMotorMaxSpeed(3, 20000);
+	
+	//motorK.setTargetSpeed(3, 50);
+	//motorK.setMotorMaxSpeed(3, 20000);
 	i2cSetup();
-	digitalWrite(4, HIGH);
 }
 void loop() {
 	
@@ -67,19 +65,24 @@ void onI2CReceive(int numByte) {
 			switch (device)
 			{
 			case 1:
+			case 2:
 				motorK.setTargetPos(device, value);
-				Serial.println(value);
 				break;
+			
 			case 3:
-		//		if (value != lastVal + 1)
-		//			Serial.print(String(value)+" ");
-					
-				lastVal = value;
+			case 4:
 				motorK.setTargetSpeed(device, (signed char)value);
+				break;
+			case 5:
+				break;
+			case 6: //channel 1 and 2 together
+				motorK.setTargetPos(1, value);
+				motorK.setTargetPos(2, value);
 				break;
 			default:
 				break;
 			}
+			Serial.println(value);
 		}
 	default:
 		break;
