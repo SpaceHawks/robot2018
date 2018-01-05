@@ -2,57 +2,69 @@
 #include <SoftwareSerial.h>
 #include <Kangaroo.h>
 #define DEFAULT_NUMBER_OF_CHANNEL 10
-class LinearActuator : public KangarooChannel {
+class Actuator
+{
 public:
-	LinearActuator(KangarooSerial& K, char name, long& targetVal);
+	void begin();
+	void loop();
+	void setTargetVal(long val);
+	virtual void setTargetVal(long val1, long val2) = 0;// only for motor
+	long *getCurrentVal();
+private:
+
+};
+
+class LinearActuator : public KangarooChannel, public Actuator {
+public:
+	LinearActuator(KangarooSerial& K, char name);
 	long min;
 	long max;
 	long maxSpeed;
 	long speed;
 	long lastSpeed;
-	long* targetVal;
+	long targetVal;
 	long lastVal;
 	long getCurrentVal();
-	void setSpeed(long speed);
+	//void setSpeed(long speed);
 	void getExtremes();
-	void setTargetVal(long val);
-	void loop(long val);
+	void setTargetVal(long pos, long newSpeed = 100);
+	void setSpeed(long newSpeed);
+	void setTargetPos(long pos );
+	void loop();
 	KangarooStatus status;
-
+	void begin();
+};
+class LinearActuatorPair{
+public:
+	LinearActuatorPair(KangarooSerial& K, char name);
+	LinearActuator* channel[2];
+	long targetVal;
+	long lastVal;
+	long lastSpeed;
+	long *getCurrentVal();
+	void setTargetVal(long pos, long newSpeed = 100);
+	void setSpeed(long newSpeed);
+	void setTargetPos(long pos);
+	void loop();
+	void begin();
 };
 
 class RMCKangaroo1
 {
 protected:
-	long targetVal[DEFAULT_NUMBER_OF_CHANNEL];
-	long lastVal[DEFAULT_NUMBER_OF_CHANNEL];
-	long targetVal1;
-	//Only for Linear Actuator
-	int linearActuatorSpeed[DEFAULT_NUMBER_OF_CHANNEL];
-	int maxSpeed[DEFAULT_NUMBER_OF_CHANNEL];
-	int lastSpeed[DEFAULT_NUMBER_OF_CHANNEL];
 	int channelIndex[DEFAULT_NUMBER_OF_CHANNEL];
-	LinearActuator* channel[DEFAULT_NUMBER_OF_CHANNEL];
+	LinearActuatorPair* channel[DEFAULT_NUMBER_OF_CHANNEL];
 	SoftwareSerial* SerialPort;
 	KangarooSerial* K;
 	String channelList;
 	String channelType;
 
 public:
-	long max[DEFAULT_NUMBER_OF_CHANNEL];
-	long min[DEFAULT_NUMBER_OF_CHANNEL];
-	long getMin(int channelName);
-	long getMax(int channelName);
+
 	RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType);
 	void loop();
-
 	void begin();
-	void setTargetPos(int channelName, long val);
-	void setTargetSpeed(int channelName, long val);
-	void setSpeed(int channelName, long speed);
-	void setMotorMaxSpeed(int channelName, long speed);
-	long getCurrentVal(int channelName);
-	int getChannelIndex(int channelName);
+	void setTargetVal(int channelName, long val);
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
 	
 };

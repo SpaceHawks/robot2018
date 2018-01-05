@@ -11,7 +11,7 @@
 #define I2CAddress 7
 /*Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
 */
-RMCKangaroo1 motorK(51, 50, "12", "ll");
+RMCKangaroo1 motorK(51, 50, "1", "p");
 //At a higher resoultion, speed limit is lower
 
 void setup() {
@@ -64,23 +64,23 @@ void onI2CReceive(int numByte) {
 			switch (device)
 			{
 			case 1:
-				motorK.setTargetPos(device, value);
+				motorK.setTargetVal(device, value);
 				break;
 			case 2:
-				motorK.setTargetPos(device, value);
+				motorK.setTargetVal(device, value);
 				break;
 			
 			case 3:
-				motorK.setTargetPos(device, (signed char)value);
+				motorK.setTargetVal(device, (signed char)value);
 				break;
 			case 4:
-				motorK.setTargetPos(device, (signed char)value);
+				motorK.setTargetVal(device, (signed char)value);
 				break;
 			case 5:
 				break;
 			case 6: //channel 1 and 2 together
-				motorK.setTargetPos(1, value);
-				motorK.setTargetPos(2, value);
+				motorK.setTargetVal(1, value);
+				motorK.setTargetVal(2, value);
 				break;
 			default:
 				break;
