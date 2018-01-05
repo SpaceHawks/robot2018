@@ -21,12 +21,12 @@
     <ClInclude Include="__vm\.arduino.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RMCKangaroo1.h">
+    <ClInclude Include="RMCKangaroo2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RMCKangaroo1.cpp">
+    <ClCompile Include="RMCKangaroo2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

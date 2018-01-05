@@ -1,28 +1,29 @@
 //#include "Sabertooth.ino"
-#include <Kangaroo.h>
-#include "RMCKangaroo1.h"
+//#include "RMCKangarooChannel.h"
+//#include "RMCKangaroo1.h"
 #include <Wire.h>
+
+//#include "Sabertooth.ino"
+#include "RMCKangaroo2.h"
+
 
 #define MESSAGE_LENGTH 8
 #define I2CAddress 7
-#define LINEAR_ACTUATOR_1 1
 /*Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
 */
-
 RMCKangaroo1 motorK(51, 50, "12", "ll");
-long setValue = 1000;
-long setSpeed=50;
-long setMotorSpeed = 15000;
-long lastVal;
 //At a higher resoultion, speed limit is lower
 
 void setup() {
 	Serial.begin(9600);
-	motorK.begin();
+	
 	
 	//motorK.setTargetSpeed(3, 50);
 	//motorK.setMotorMaxSpeed(3, 20000);
 	i2cSetup();
+	Serial.println("start begin setup");
+	motorK.begin();
+	Serial.println("end setup");
 }
 void loop() {
 	
@@ -42,10 +43,8 @@ void i2cSetup() {
 void onI2CReceive(int numByte) {
 	int message[MESSAGE_LENGTH];
 	int i = 0;
-
 	for (int i = 0; i < numByte; i++) {
 		message[i] = Wire.read();
-
 	}
 	int systemCommand = message[0];
 	// 1 - from a controller
@@ -65,13 +64,17 @@ void onI2CReceive(int numByte) {
 			switch (device)
 			{
 			case 1:
+				motorK.setTargetPos(device, value);
+				break;
 			case 2:
 				motorK.setTargetPos(device, value);
 				break;
 			
 			case 3:
+				motorK.setTargetPos(device, (signed char)value);
+				break;
 			case 4:
-				motorK.setTargetSpeed(device, (signed char)value);
+				motorK.setTargetPos(device, (signed char)value);
 				break;
 			case 5:
 				break;
