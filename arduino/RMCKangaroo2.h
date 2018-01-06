@@ -8,7 +8,7 @@ public:
 	void begin();
 	void loop();
 	void setTargetVal(long val);
-	virtual void setTargetVal(long val1, long val2) = 0;// only for motor
+	void setTargetVal(long val1, long val2); // only for motor
 	long *getCurrentVal();
 private:
 
@@ -34,6 +34,7 @@ public:
 	KangarooStatus status;
 	void begin();
 };
+
 class LinearActuatorPair{
 public:
 	LinearActuatorPair(KangarooSerial& K, char name);
@@ -47,6 +48,7 @@ public:
 	void setTargetPos(long pos);
 	void loop();
 	void begin();
+	void sync();
 };
 
 class RMCKangaroo1

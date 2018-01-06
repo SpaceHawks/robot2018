@@ -20,7 +20,7 @@ void RMCKangaroo1::loop()
 	//for (int i = 0; i < 1; i++) {
 	//	int tempTargetVal = targetVal[i];
 	//	int tempLASpeed = linearActuatorSpeed[i];
-	//	if (channelType[i] == 'p')
+	//	if (channelType[i] == 'l')
 	//	{
 	//		
 	//		//if ((tempTargetVal >= min[i] && tempTargetVal <= max[i]) && (tempTargetVal != lastVal[i] || tempLASpeed != lastSpeed[i])) {
@@ -83,9 +83,6 @@ void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
 	//}
 	channel[0]->setTargetPos(val);
 }
-
-
-
 
 LinearActuator::LinearActuator(KangarooSerial& K, char name):KangarooChannel(K, name)
 {
@@ -172,9 +169,26 @@ void LinearActuatorPair::loop()
 	channel[1]->setTargetPos(tempTargetVal);
 	channel[0]->loop();
 	channel[1]->loop();
+	sync();
 }
 void LinearActuatorPair::begin()
 {
 	channel[0]->begin();
 	channel[1]->begin();
+}
+
+void LinearActuatorPair::sync()
+{
+	long la1 = targetVal - map(channel[0]->getP().value(), channel[0]->min, channel[0]->max, 0, 100);
+	long la2 = targetVal - map(channel[1]->getP().value(), channel[1]->min, channel[1]->max, 0, 100);
+	long gap = la1 - la2;
+	Serial.println(gap);
+	while (abs(gap) > 3)
+	{
+		if (la1 > la2)
+			channel[0]->powerDown();
+		if (la1 < la2)
+			channel[1]->powerDown();
+
+	}	
 }
