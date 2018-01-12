@@ -1,6 +1,8 @@
 #pragma once
 #include <SoftwareSerial.h>
 #include <Kangaroo.h>
+
+#include <PID_v1.h>
 #define DEFAULT_NUMBER_OF_CHANNEL 10
 class Actuator
 {
@@ -25,9 +27,11 @@ public:
 	long targetVal;
 	long lastVal;
 	long getCurrentVal();
-	//void setSpeed(long speed);
+	bool done = false;
+//	void setSpeed(long speed);
 	void getExtremes();
-	void setTargetVal(long pos, long newSpeed = 100);
+	void setTargetPosDirect(long pos);
+	void setTargetVal(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
 	void setTargetPos(long pos );
 	void loop();
@@ -42,13 +46,21 @@ public:
 	long targetVal;
 	long lastVal;
 	long lastSpeed;
+	bool isSyncing;
 	long *getCurrentVal();
-	void setTargetVal(long pos, long newSpeed = 100);
+	void setTargetVal(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
 	void setTargetPos(long pos);
 	void loop();
 	void begin();
-	void sync();
+	long speed;
+	//Define Variables we'll be connecting to
+	double Setpoint, Input, Output;
+
+	//Specify the links and initial tuning parameters
+	double Kp = 0.4, Ki = 0, Kd = 0;
+	PID* syncPID;
+
 };
 
 class RMCKangaroo1

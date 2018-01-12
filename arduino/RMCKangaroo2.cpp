@@ -94,7 +94,8 @@ void LinearActuator::begin() {
 }
 void LinearActuator::loop()
 {
-	if ((targetVal >= min && targetVal <= max) && (targetVal != lastVal || speed != lastSpeed)) {
+	if (targetVal >= min && targetVal <= max && (targetVal != lastVal || speed != lastSpeed )) {
+		done = false;
 		p(targetVal, speed);
 		lastVal = targetVal;
 		lastSpeed = speed;
@@ -102,7 +103,9 @@ void LinearActuator::loop()
 
 	status = getP();
 	if (status.done()) {
+		//Serial.println("Clive is power down");
 		powerDown();
+		done = true;
 	}
 }
 void LinearActuator::getExtremes()
@@ -112,7 +115,15 @@ void LinearActuator::getExtremes()
 		long safeBound = (absMax - absMin)*0.02;
 		min = (absMin + safeBound);
 		max = absMax - safeBound;
-		maxSpeed = 0.1 * (absMax - absMin);
+		maxSpeed =208;
+		//maxSpeed = 0.5 * (absMax - absMin);
+		Serial.println("max speed is: " + String(maxSpeed));
+}
+void LinearActuator::setTargetPosDirect(long pos)
+{
+	if (targetVal >= min && targetVal <= max) {
+		targetVal = pos;
+	}
 }
 void LinearActuator::setTargetVal(long pos, long newSpeed) { //val = 0% to 100%
 	setTargetPos(pos);
@@ -124,9 +135,8 @@ void LinearActuator::setTargetPos(long pos) { //val = 0% to 100%
 	}
 }
 void LinearActuator::setSpeed(long newSpeed) { //val = 0% to 100%
-	if (newSpeed >= 0 && speed <= maxSpeed) {
-		lastSpeed = newSpeed;
-		speed = map(newSpeed, 0, 100, 1, maxSpeed);
+	if (newSpeed >= 0 && newSpeed <= 100) {
+		speed = map(newSpeed, 0, 100, 0, maxSpeed);
 	}
 }
 long LinearActuator::getCurrentVal()
@@ -137,6 +147,10 @@ long LinearActuator::getCurrentVal()
 
 LinearActuatorPair::LinearActuatorPair(KangarooSerial & K, char name)
 {
+	syncPID = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+	Setpoint = 0;
+	syncPID->SetMode(AUTOMATIC);
+	syncPID->SetOutputLimits(-5, 5);
 	channel[0] = new LinearActuator(K, name);
 	channel[1] = new LinearActuator(K, name+1);
 }
@@ -150,12 +164,13 @@ void LinearActuatorPair::setTargetVal(long pos, long newSpeed)
 
 }
 void LinearActuatorPair::setSpeed(long newSpeed)
-{
+{// set speed in the range if 0 - 100
 	if (newSpeed != lastSpeed && newSpeed >= 0 && newSpeed <= 100)
 	{
 		channel[0]->setSpeed(newSpeed);
 		channel[1]->setSpeed(newSpeed);
-		lastSpeed = newSpeed;
+		lastSpeed = newSpeed; //fix this
+		speed = newSpeed;
 	}
 }
 void LinearActuatorPair::setTargetPos(long pos)
@@ -165,30 +180,125 @@ void LinearActuatorPair::setTargetPos(long pos)
 void LinearActuatorPair::loop()
 {
 	long tempTargetVal = targetVal;
-	channel[0]->setTargetPos(tempTargetVal);
-	channel[1]->setTargetPos(tempTargetVal);
+	if (channel[0]->done && channel[1]->done)
+	{
+		channel[0]->setTargetPos(tempTargetVal);
+		channel[1]->setTargetPos(tempTargetVal);
+	}
+	else
+	{
+		long la1 = channel[0]->status.value();
+		long la2 = channel[1]->status.value();
+		Input = -(la1 - la2);
+		long gap = Input;
+		syncPID->Compute();
+		Serial.println(String(gap) + "     " + String(Output));
+		long scaledLa1 = map(la1, channel[0]->min, channel[0]->max, 0, 100);
+		if ((tempTargetVal - scaledLa1) > 1)
+		{
+			channel[1]->setSpeed(speed + Output);
+		}
+		else if ((tempTargetVal - scaledLa1) < -1)
+		{
+			channel[1]->setSpeed(speed - Output);
+		}
+
+		//Serial.println(gap);
+		if (abs(gap) > 40)
+		{
+			if (!isSyncing) {
+				isSyncing = true;
+				channel[0]->setTargetPosDirect(la1);
+				channel[1]->setTargetPosDirect(la1);
+			}
+		}
+		else {
+			if (isSyncing && abs(gap) < 15)
+			{
+				isSyncing = false;
+			}
+			channel[0]->setTargetPos(tempTargetVal);
+			channel[1]->setTargetPos(tempTargetVal);
+		}
+	}
+	
+
 	channel[0]->loop();
 	channel[1]->loop();
-	sync();
+
+
+	//long tempTargetVal = targetVal;
+	//long la1 = channel[0]->status.value();
+	//long la2 = channel[1]->status.value();
+	//Input = -(la1 - la2);
+	//long gap = Input;
+	//syncPID->Compute();
+	//Serial.println(String(gap) + "     " + String(Output));
+	//long scaledLa1 = map(la1, channel[0]->min, channel[0]->max, 0, 100);
+	//if ((tempTargetVal - scaledLa1) > 5)
+	//{
+	//	channel[1]->setSpeed(speed + Output);
+	//}
+	//else if ((tempTargetVal - scaledLa1) < -5)
+	//{
+	//	channel[1]->setSpeed(speed - Output);
+	//}
+
+	////Serial.println(gap);
+	//if (abs(gap) > 20)
+	//{
+	//	if (!isSyncing) {
+	//		isSyncing = true;
+	//		channel[0]->setTargetPosDirect(la1);
+	//		channel[1]->setTargetPosDirect(la1);
+	//	}
+	//}
+	//else {
+	//	if (isSyncing && abs(gap) < 15)
+	//	{
+	//		isSyncing = false;
+	//	}
+	//	channel[0]->setTargetPos(tempTargetVal);
+	//	channel[1]->setTargetPos(tempTargetVal);
+	//}
+
+	//channel[0]->loop();
+	//channel[1]->loop();
+
+
+
+
+
 }
+	//	if (!syncHaveBeenDetected) //have not detected unsynced
+	//	{
+	//		syncHaveBeenDetected = true;
+	//		if (la1 > la2)
+	//		{
+
+	//			channel[1]->forceStop = true;
+	//		}
+	//		if (la1 < la2)
+	//		{
+	//			channel[0]->forceStop = true;
+	//		}
+	//		Serial.println("is not Sync");
+	//	}
+	//}
+	//else {
+	//	if (syncHaveBeenDetected) {
+	//		syncHaveBeenDetected = false;
+	//		channel[0]->forceStart = true;
+	//		channel[1]->forceStart = true;
+	//		Serial.println("is Sync");
+	//	}
+	//}
+	
+
 void LinearActuatorPair::begin()
 {
+	
 	channel[0]->begin();
 	channel[1]->begin();
-}
-
-void LinearActuatorPair::sync()
-{
-	long la1 = targetVal - map(channel[0]->getP().value(), channel[0]->min, channel[0]->max, 0, 100);
-	long la2 = targetVal - map(channel[1]->getP().value(), channel[1]->min, channel[1]->max, 0, 100);
-	long gap = la1 - la2;
-	Serial.println(gap);
-	while (abs(gap) > 3)
-	{
-		if (la1 > la2)
-			channel[0]->powerDown();
-		if (la1 < la2)
-			channel[1]->powerDown();
-
-	}	
+	setSpeed(94);
 }

@@ -16,8 +16,6 @@ RMCKangaroo1 motorK(51, 50, "1", "p");
 
 void setup() {
 	Serial.begin(9600);
-	
-	
 	//motorK.setTargetSpeed(3, 50);
 	//motorK.setMotorMaxSpeed(3, 20000);
 	i2cSetup();
@@ -29,7 +27,7 @@ void loop() {
 	
 	motorK.loop();
 	//{@Plot.Position.Max.Red motorK.max1}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?},  {@Plot.Speed.SetSpeed.Red setMotorSpeed}, {@Plot.Speed.CurrentSpeed.Green motorK.status1->value()}, setMotorSpeed is {setMotorSpeed =?}
-
+	delay(1);
 }
 
 
@@ -85,7 +83,7 @@ void onI2CReceive(int numByte) {
 			default:
 				break;
 			}
-			Serial.println(value);
+			//Serial.println(value);
 		}
 	default:
 		break;
