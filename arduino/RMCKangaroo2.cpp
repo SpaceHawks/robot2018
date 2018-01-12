@@ -1,6 +1,9 @@
 #include "RMCKangaroo2.h"
 
-
+/*!
+Constructor. Initilizes Arduino pins connected to the Kangaroo.
+\param potPin the Arduino analog pin number. Default is 0.
+*/
 RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType)
 {
 	this->channelList = channelList;
@@ -13,42 +16,19 @@ RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin, String channelList, String chan
 		channelIndex[(int)(channelList[i]-49)] = i; //if channel is 1, index is 0
 	}
 }
-
+/*!
+Executes the loop of the right Linear Actuator
+*/
 void RMCKangaroo1::loop()
 {
 	channel[0]->loop();
-	//for (int i = 0; i < 1; i++) {
-	//	int tempTargetVal = targetVal[i];
-	//	int tempLASpeed = linearActuatorSpeed[i];
-	//	if (channelType[i] == 'l')
-	//	{
-	//		
-	//		//if ((tempTargetVal >= min[i] && tempTargetVal <= max[i]) && (tempTargetVal != lastVal[i] || tempLASpeed != lastSpeed[i])) {
-	//		//	channel[i]->p(tempTargetVal, tempLASpeed);
-	//		//	lastVal[i] = tempTargetVal;
-	//		//	lastSpeed[i] = tempLASpeed;
-	//		//}
-
-	//		//status[i] = channel[i]->getP();
-	//		//if (status[i].done()) {
-	//		//	channel[i]->powerDown();
-	//		//}
-	//	}
-	//	else if (channelType[i] == 'm') {
-
-	//		//if (tempTargetVal != lastVal[i]) {
-	//		//	channel[i]->s(tempTargetVal);
-	//		//	delay(10);
-	//		//	lastVal[i] = tempTargetVal;
-	//		//}
-
-	//		//status[i] = channel[i]->getS();
-	//	}
-
-	//}
-
+	
 }
 
+/*!
+Initiates Serial Communication. 
+Executes begin methods of all Linear Actuators and Motors.
+*/
 void RMCKangaroo1::begin() {
 	SerialPort->begin(9600);
 	SerialPort->listen();
@@ -70,7 +50,10 @@ void RMCKangaroo1::begin() {
 		}
 	}
 }
-
+/*!
+Sets target value to selected channel.
+\param channel number, value.
+*/
 void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
 	//int index = getChannelIndex(channelName);
 	
@@ -84,14 +67,25 @@ void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
 	channel[0]->setTargetPos(val);
 }
 
+/*!
+Constructor
+*/
 LinearActuator::LinearActuator(KangarooSerial& K, char name):KangarooChannel(K, name)
 {
 }
+
+/*!
+Initiates the Kangaroo. Gets min and max positions for Linear Actuator.
+*/
 void LinearActuator::begin() {
 
 	start();
 	getExtremes();
 }
+/*!
+Extends Linear Actuator to target position with set speed while in range.
+Powers down when completed.
+*/
 void LinearActuator::loop()
 {
 	if (targetVal >= min && targetVal <= max && (targetVal != lastVal || speed != lastSpeed )) {
@@ -103,11 +97,14 @@ void LinearActuator::loop()
 
 	status = getP();
 	if (status.done()) {
-		//Serial.println("Clive is power down");
 		powerDown();
 		done = true;
 	}
 }
+/*!
+Computes min and max values for position of Linear Actuator. 
+Sets default max Speed.
+*/
 void LinearActuator::getExtremes()
 {
 		long absMin = getMin().value();
@@ -119,32 +116,51 @@ void LinearActuator::getExtremes()
 		//maxSpeed = 0.5 * (absMax - absMin);
 		Serial.println("max speed is: " + String(maxSpeed));
 }
+/*!
+Sets target position for Linear Actuator between 0 and 100.
+*/
 void LinearActuator::setTargetPosDirect(long pos)
 {
 	if (targetVal >= min && targetVal <= max) {
 		targetVal = pos;
 	}
 }
+/*!
+Sets target position and speed for Linear Actuator.
+*/
 void LinearActuator::setTargetVal(long pos, long newSpeed) { //val = 0% to 100%
 	setTargetPos(pos);
 	setSpeed(newSpeed);
 }
-void LinearActuator::setTargetPos(long pos) { //val = 0% to 100%
+/*!
+Sets target position for Linear Actuator scaled between min and max.
+*/
+void LinearActuator::setTargetPos(long pos) { 
 	if (pos >= 0 && pos <= 100) {
 		targetVal = map(pos, 0, 100, min, max);
 	}
 }
-void LinearActuator::setSpeed(long newSpeed) { //val = 0% to 100%
+/*!
+Sets speed for Linear Actuator scaled between 0 and max speed.
+*/
+void LinearActuator::setSpeed(long newSpeed) { 
 	if (newSpeed >= 0 && newSpeed <= 100) {
 		speed = map(newSpeed, 0, 100, 0, maxSpeed);
 	}
 }
+/*!
+Gets current position of Linear Actuator.
+*/
 long LinearActuator::getCurrentVal()
 {
 	return status.value();
 }
 
-
+/*!
+Constructor
+Instantiates PID control object. Sets default values and range.
+Instaites objects to control Linear Actuators individually.
+*/
 LinearActuatorPair::LinearActuatorPair(KangarooSerial & K, char name)
 {
 	syncPID = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
@@ -154,15 +170,25 @@ LinearActuatorPair::LinearActuatorPair(KangarooSerial & K, char name)
 	channel[0] = new LinearActuator(K, name);
 	channel[1] = new LinearActuator(K, name+1);
 }
+
+/*!
+\
+*/
 long * LinearActuatorPair::getCurrentVal()
 {
 	return nullptr;
 }
-void LinearActuatorPair::setTargetVal(long pos, long newSpeed)
-{
-	Serial.println("LAPair setTargetVal is empty.");
 
-}
+//
+//void LinearActuatorPair::setTargetVal(long pos, long newSpeed)
+//{
+//	Serial.println("LAPair setTargetVal is empty.");
+//
+//}
+
+/*!
+\
+*/
 void LinearActuatorPair::setSpeed(long newSpeed)
 {// set speed in the range if 0 - 100
 	if (newSpeed != lastSpeed && newSpeed >= 0 && newSpeed <= 100)
@@ -173,10 +199,20 @@ void LinearActuatorPair::setSpeed(long newSpeed)
 		speed = newSpeed;
 	}
 }
+
+/*!
+Sets target value for position of Linear Actuator.
+*/
 void LinearActuatorPair::setTargetPos(long pos)
 {
 	targetVal = pos;
 }
+
+/*!
+Computes gap between Linear Actuators and fixes it if greater than tolerance.
+Moves Linear Actuator Pair to target value controlled by PID. 
+Executes loops of all channels.
+*/
 void LinearActuatorPair::loop()
 {
 	long tempTargetVal = targetVal;
@@ -189,11 +225,12 @@ void LinearActuatorPair::loop()
 	{
 		long la1 = channel[0]->status.value();
 		long la2 = channel[1]->status.value();
-		Input = -(la1 - la2);
+		Input = la2-la1;
 		long gap = Input;
 		syncPID->Compute();
-		Serial.println(String(gap) + "     " + String(Output));
+		//Serial.println(String(targetVal)+"     "+String(Output));
 		long scaledLa1 = map(la1, channel[0]->min, channel[0]->max, 0, 100);
+		long scaledLa2 = map(la2, channel[0]->min, channel[0]->max, 0, 100);
 		if ((tempTargetVal - scaledLa1) > 1)
 		{
 			channel[1]->setSpeed(speed + Output);
@@ -204,10 +241,10 @@ void LinearActuatorPair::loop()
 		}
 
 		//Serial.println(gap);
-		if (abs(gap) > 40)
-		{
+		if (abs(gap) > 25){
 			if (!isSyncing) {
 				isSyncing = true;
+				
 				channel[0]->setTargetPosDirect(la1);
 				channel[1]->setTargetPosDirect(la1);
 			}
@@ -295,6 +332,10 @@ void LinearActuatorPair::loop()
 	//}
 	
 
+/*!
+Executes begin methods of all channels.
+Sets speed of Linear Actuator.
+*/
 void LinearActuatorPair::begin()
 {
 	
