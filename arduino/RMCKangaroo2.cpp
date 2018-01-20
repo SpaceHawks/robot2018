@@ -1,71 +1,5 @@
 #include "RMCKangaroo2.h"
 
-/*!
-Constructor. Initilizes Arduino pins connected to the Kangaroo.
-\param potPin the Arduino analog pin number. Default is 0.
-*/
-RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType)
-{
-	this->channelList = channelList;
-	this->channelType = channelType;
-	SerialPort = new SoftwareSerial(rxPin, txPin);
-	K = new KangarooSerial(*SerialPort);
-	
-	for (int i = 0; i < channelList.length(); i++) {
-		channel[i] = new LinearActuatorPair(*K, channelList[i]);
-		channelIndex[(int)(channelList[i]-49)] = i; //if channel is 1, index is 0
-	}
-}
-/*!
-Executes the loop of the right Linear Actuator
-*/
-void RMCKangaroo1::loop()
-{
-	channel[0]->loop();
-	
-}
-
-/*!
-Initiates Serial Communication. 
-Executes begin methods of all Linear Actuators and Motors.
-*/
-void RMCKangaroo1::begin() {
-	SerialPort->begin(9600);
-	SerialPort->listen();
-	
-	for(int i=0; i< channelList.length(); i++)
-		channel[i]->begin();
-
-	for (int i = 0; i < channelList.length(); i++) {
-		if (channelType[i] == 'l') {
-		}
-		else if (channelType[i] == 'm') {
-			/*long absMin = channel[i]->getMin().value();
-			long absMax = channel[i]->getMax().value();
-			long safeBound = (absMax - absMin)*0.02;
-			min[i] = (absMin + safeBound);
-			max[i] = absMax - safeBound;
-			maxSpeed[i] = 0.1 * (absMax - absMin);*/
-			//setSpeed((int)(channelList[i] - 48), 50);
-		}
-	}
-}
-/*!
-Sets target value to selected channel.
-\param channel number, value.
-*/
-void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
-	//int index = getChannelIndex(channelName);
-	
-	//channel[0]->setTargetVal(val);
-	//channel[1]->setTargetVal(val);
-	//channel[index]->setTargetVal(val);
-
-	//if (val >= 0 && val <= 100) {
-	//	targetVal1 = map(val, 0, 100, channel[0]->min, channel[0]->max);
-	//}
-	channel[0]->setTargetPos(val);
-}
 
 /*!
 Constructor
@@ -331,7 +265,6 @@ void LinearActuatorPair::loop()
 	//	}
 	//}
 	
-
 /*!
 Executes begin methods of all channels.
 Sets speed of Linear Actuator.
@@ -342,4 +275,201 @@ void LinearActuatorPair::begin()
 	channel[0]->begin();
 	channel[1]->begin();
 	setSpeed(94);
+}
+
+Motor::Motor(KangarooSerial& K, char name) :KangarooChannel(K, name)
+{
+}
+
+void Motor::begin()
+{
+	start();
+}
+
+void Motor::loop()
+{
+	long tempSpeed = speed;
+	//Serial.println("tempSpeed "+String(tempSpeed));
+	//Serial.println("lastSpeed " + String(lastSpeed));
+	//Serial.println("speedLimit " + String(speedLimit));
+	if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
+	{
+		s(tempSpeed);
+		lastSpeed = tempSpeed;
+		Serial.println("motor loop sent");
+	}
+}
+
+//
+void Motor::setTargetSpeed(long speed) {
+	if (speed >= -100 && speed <= 100) {
+		this->speed = map(speed, -100, 100, -speedLimit, speedLimit);
+	}
+}
+
+//void Motor::setTargetVal(long val, long distance)
+//{
+//	setTargetSpeed(val);
+//	//setTargetDistance(distance);
+//}
+
+long Motor::getCurrentSpeed()
+{
+	return status.value();
+}
+
+void Motor::setSpeedLimit(long speed)
+{
+	if (speed > 0) {
+		speedLimit = speed;
+	}
+}
+//void Motor::moveAtSpeed(long val, long newSpeed)
+//{
+//
+//}
+
+//void motor::move(long val)
+//{
+//	long speedlimit = maxspeed;
+//	pi(val, speedlimit);
+//	//done = true;
+//
+//}
+Motors::Motors(KangarooSerial & K, char name)
+{
+	
+	channel[0] = new Motor(K, name);
+	channel[1] = new Motor(K, name + 1);
+	channel[2] = new Motor(K, name + 2);
+	channel[3] = new Motor(K, name + 3);
+	for (int i = 0;i < 4;i++) {
+		channel[i]->setSpeedLimit(3000);
+	}
+
+}
+long Motors::setTargetVal(long drive, long turn)
+{
+	setDrive(drive);
+	setTurn(turn);
+}
+
+void Motors::setDrive(long drive)
+{
+	if (drive >= -100 && drive <= 100) {
+		this->drive = drive;
+	}
+}
+
+void Motors::setTurn(long turn)
+{
+	if (turn >= -100 && turn <= 100) {
+		this->turn = turn;
+	}
+}
+
+void Motors::loop()
+{
+	long tempTurn = turn;
+
+	long tempDrive = drive;
+	if ((tempDrive <= 100 && tempDrive >= -100) && (tempTurn <= 100 && tempTurn >= -100)) {
+		long leftSpeed = tempDrive;
+		long rightSpeed = tempDrive;
+		if (tempTurn == -100) {
+			leftSpeed = -tempDrive;
+			Serial.print(String(0) + " ");
+		}
+		else if (tempTurn < 0 && tempTurn >-100) {
+			leftSpeed = tempDrive * (1 - (float)tempTurn / 100);
+			Serial.print(String(1) + " ");
+		}
+		else if (tempTurn == 0) {
+			Serial.print(String(2) + " ");
+		}
+		else if (tempTurn < 100 && tempTurn > 0) {
+			rightSpeed = tempDrive * (1 - (float)tempTurn / 100);
+			Serial.print(String(3) + " ");
+		}
+		else if (tempTurn == 100) {
+			rightSpeed = -tempDrive;
+			Serial.print(String(4) + " ");
+		}
+		Serial.println(String(leftSpeed) + " " + String(rightSpeed));
+		channel[FRONT_LEFT]->setTargetSpeed(-leftSpeed);
+		channel[FRONT_RIGHT]->setTargetSpeed(-rightSpeed);
+		channel[REAR_LEFT]->setTargetSpeed(leftSpeed);
+		channel[REAR_RIGHT]->setTargetSpeed(rightSpeed);
+	}
+
+	for (int i = 0;i < 4;i++) {
+		channel[i]->loop();
+	}
+}
+
+void Motors::begin()
+{
+	for (int i = 0;i < 4;i++) {
+		channel[i]->begin();
+	}
+}
+
+/*!
+Constructor. Initilizes Arduino pins connected to the Kangaroo.
+\param potPin the Arduino analog pin number. Default is 0.
+*/
+RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType)
+{
+	this->channelList = channelList;
+	this->channelType = channelType;
+	SerialPort = new SoftwareSerial(rxPin, txPin);
+	K = new KangarooSerial(*SerialPort);
+
+	for (int i = 0; i < channelList.length(); i++) {
+		channel[i] = new Motors(*K, channelList[i]);
+		channelIndex[(int)(channelList[i] - 49)] = i; //if channel is 1, index is 0
+	}
+}
+/*!
+Executes the loop of the right Linear Actuator
+*/
+void RMCKangaroo1::loop()
+{
+	channel[0]->loop();
+
+}
+
+/*!
+Initiates Serial Communication.
+Executes begin methods of all Linear Actuators and Motors.
+*/
+void RMCKangaroo1::begin() {
+	SerialPort->begin(9600);
+	SerialPort->listen();
+
+	for (int i = 0; i< channelList.length(); i++)
+		channel[i]->begin();
+
+	for (int i = 0; i < channelList.length(); i++) {
+		if (channelType[i] == 'l') {
+		}
+		else if (channelType[i] == 'm') {
+		}
+	}
+}
+/*!
+Sets target value to selected channel.
+\param channel number, value.
+*/
+void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
+															 //int index = getChannelIndex(channelName);
+
+															 //channel[0]->setTargetVal(val);
+															 //channel[1]->setTargetVal(val);
+															 //channel[index]->setTargetVal(val);
+
+															 //if (val >= 0 && val <= 100) {
+															 //	targetVal1 = map(val, 0, 100, channel[0]->min, channel[0]->max);
+															 //}
+	channel[0]->setTargetVal(50, val);
 }
