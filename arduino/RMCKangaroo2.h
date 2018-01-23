@@ -90,10 +90,10 @@ public:
 	long lastSpeed = 1;
 	long speed = 0;
 	long getCurrentSpeed();
+	void move(long angle, long speed);
 	void setSpeedLimit(long speed);
 	//void moveAtSpeed(long val, long newSpeed);
 	void setTargetVal(long val);
-	void move(long val);
 	void loop();
 	void setTargetSpeed(long val);
 	//void setTargetVal(long val, long distance);

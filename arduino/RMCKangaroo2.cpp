@@ -329,13 +329,14 @@ void Motor::setSpeedLimit(long speed)
 //
 //}
 
-//void motor::move(long val)
-//{
-//	long speedlimit = maxspeed;
-//	pi(val, speedlimit);
-//	//done = true;
-//
-//}
+void Motor::move(long angle, long speed)
+{
+	long val = angle / 360 * 2040;
+	pi(val, speed).wait();
+	//done = true;
+
+}
+
 Motors::Motors(KangarooSerial & K, char name)
 {
 	channel[0] = new Motor(K, name);
@@ -410,7 +411,9 @@ void Motors::begin()
 {
 	for (int i = 0;i < 4;i++) {
 		channel[i]->begin();
+
 	}
+	channel[0]->move(360, 1000);
 }
 
 /*!
