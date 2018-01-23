@@ -338,7 +338,6 @@ void Motor::setSpeedLimit(long speed)
 //}
 Motors::Motors(KangarooSerial & K, char name)
 {
-	
 	channel[0] = new Motor(K, name);
 	channel[1] = new Motor(K, name + 1);
 	channel[2] = new Motor(K, name + 2);
@@ -381,7 +380,7 @@ void Motors::loop()
 			Serial.print(String(0) + " ");
 		}
 		else if (tempTurn < 0 && tempTurn >-100) {
-			leftSpeed = tempDrive * (1 - (float)tempTurn / 100);
+			leftSpeed = tempDrive * (1 + (float)tempTurn / 100);
 			Serial.print(String(1) + " ");
 		}
 		else if (tempTurn == 0) {
@@ -471,5 +470,21 @@ void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
 															 //if (val >= 0 && val <= 100) {
 															 //	targetVal1 = map(val, 0, 100, channel[0]->min, channel[0]->max);
 															 //}
-	channel[0]->setTargetVal(50, val);
+	channel[0]->setDrive(val);
+}
+/*!
+Sets target value to selected channel.
+\param channel number, value.
+*/
+void RMCKangaroo1::setTargetVal1(int channelName, long val) { //val = 0% to 100%
+															 //int index = getChannelIndex(channelName);
+
+															 //channel[0]->setTargetVal(val);
+															 //channel[1]->setTargetVal(val);
+															 //channel[index]->setTargetVal(val);
+
+															 //if (val >= 0 && val <= 100) {
+															 //	targetVal1 = map(val, 0, 100, channel[0]->min, channel[0]->max);
+															 //}
+	channel[0]->setTurn(val);
 }

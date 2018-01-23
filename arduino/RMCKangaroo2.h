@@ -140,5 +140,6 @@ public:
 	void loop();
 	void begin();
 	void setTargetVal(int channelName, long val);
+	void setTargetVal1(int channelName, long val);
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
 };

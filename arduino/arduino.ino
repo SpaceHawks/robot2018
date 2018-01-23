@@ -22,7 +22,7 @@ void setup() {
 	Serial.println("start begin setup");
 	motorK.begin();
 	Serial.println("end setup");
-	motorK.setTargetVal(3,90);
+	//motorK.setTargetVal(3,90);
 }
 void loop() {
 
@@ -63,10 +63,11 @@ void onI2CReceive(int numByte) {
 			switch (device)
 			{
 			case 1:
-				motorK.setTargetVal(device, value);
+
+				motorK.setTargetVal(device, (signed char)value);
 				break;
 			case 2:
-				motorK.setTargetVal(device, value);
+				motorK.setTargetVal1(device, (signed char)value);
 				break;
 
 			case 3:
