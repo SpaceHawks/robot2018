@@ -286,18 +286,34 @@ void Motor::begin()
 	start();
 }
 
+void Motor::setTargetPos(long pos)
+{
+	mode = 1; 
+	targetPos = pos;
+}
+
 void Motor::loop()
 {
+
 	long tempSpeed = speed;
 	//Serial.println("tempSpeed "+String(tempSpeed));
 	//Serial.println("lastSpeed " + String(lastSpeed));
 	//Serial.println("speedLimit " + String(speedLimit));
-	if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
-	{
-		s(tempSpeed);
-		lastSpeed = tempSpeed;
-		Serial.println("motor loop sent");
+	if (mode == 0) {
+		if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
+		{
+			s(tempSpeed);
+			lastSpeed = tempSpeed;
+			Serial.println("motor loop sent");
+
+		}
 	}
+	else if (mode == 1) {
+	//long val = angle / 360 * 2040;
+	targetPos -= getPi().value();
+	pi(targetPos, tempSpeed);
+	}
+	
 }
 
 //
@@ -368,38 +384,61 @@ void Motors::setTurn(long turn)
 	}
 }
 
+void Motors::setAngle(long angle)
+{
+	this->angle += angle;
+}
+
+void Motors::clearAngle()
+{
+	angle = 0;
+}
+
 void Motors::loop()
 {
-	long tempTurn = turn;
+	for (int i = 0;i < 4;i++) {
+		channel[i]->mode=this->mode;
+	}
 
-	long tempDrive = drive;
-	if ((tempDrive <= 100 && tempDrive >= -100) && (tempTurn <= 100 && tempTurn >= -100)) {
-		long leftSpeed = tempDrive;
-		long rightSpeed = tempDrive;
-		if (tempTurn == -100) {
-			leftSpeed = -tempDrive;
-			Serial.print(String(0) + " ");
+		long tempTurn = turn;
+		long tempDrive = drive;
+		if ((tempDrive <= 100 && tempDrive >= -100) && (tempTurn <= 100 && tempTurn >= -100)) {
+			long leftSpeed = tempDrive;
+			long rightSpeed = tempDrive;
+			if (tempTurn == -100) {
+				leftSpeed = -tempDrive;
+				//Serial.print(String(0) + " ");
+			}
+			else if (tempTurn < 0 && tempTurn >-100) {
+				leftSpeed = tempDrive * (1 + (float)tempTurn / 100);
+				//Serial.print(String(1) + " ");
+			}
+			else if (tempTurn == 0) {
+				//Serial.print(String(2) + " ");
+			}
+			else if (tempTurn < 100 && tempTurn > 0) {
+				rightSpeed = tempDrive * (1 - (float)tempTurn / 100);
+				//Serial.print(String(3) + " ");
+			}
+			else if (tempTurn == 100) {
+				rightSpeed = -tempDrive;
+				//Serial.print(String(4) + " ");
+			}
+
+			Serial.println(String(leftSpeed) + " " + String(rightSpeed));
+			channel[FRONT_LEFT]->setTargetSpeed(-leftSpeed);
+			channel[FRONT_RIGHT]->setTargetSpeed(-rightSpeed);
+			channel[REAR_LEFT]->setTargetSpeed(leftSpeed);
+			channel[REAR_RIGHT]->setTargetSpeed(rightSpeed);
+
+			if (mode == 1 && alreadySetTargetPos = false;) {
+				channel[FRONT_LEFT]->setTargetPos(-targetPos);
+				channel[FRONT_RIGHT]->setTargetPos(-targetPos);
+				channel[REAR_LEFT]->setTargetPos(targetPos);
+				channel[REAR_RIGHT]->setTargetPos(targetPos);
+				alreadySetTargetPos = true; //fix this
+			}
 		}
-		else if (tempTurn < 0 && tempTurn >-100) {
-			leftSpeed = tempDrive * (1 + (float)tempTurn / 100);
-			Serial.print(String(1) + " ");
-		}
-		else if (tempTurn == 0) {
-			Serial.print(String(2) + " ");
-		}
-		else if (tempTurn < 100 && tempTurn > 0) {
-			rightSpeed = tempDrive * (1 - (float)tempTurn / 100);
-			Serial.print(String(3) + " ");
-		}
-		else if (tempTurn == 100) {
-			rightSpeed = -tempDrive;
-			Serial.print(String(4) + " ");
-		}
-		Serial.println(String(leftSpeed) + " " + String(rightSpeed));
-		channel[FRONT_LEFT]->setTargetSpeed(-leftSpeed);
-		channel[FRONT_RIGHT]->setTargetSpeed(-rightSpeed);
-		channel[REAR_LEFT]->setTargetSpeed(leftSpeed);
-		channel[REAR_RIGHT]->setTargetSpeed(rightSpeed);
 	}
 
 	for (int i = 0;i < 4;i++) {
@@ -413,9 +452,34 @@ void Motors::begin()
 		channel[i]->begin();
 
 	}
-	channel[0]->move(360, 1000);
+	move();
+	
 }
 
+void Motors::setTargetPos(long pos)
+{
+	
+}
+
+
+void Motors::v()
+{
+	for (int i = 0;i < 4;i++) {
+		channel[i]->begin();
+
+	}
+	move();
+
+}
+
+//void Motors::move()
+//{
+//	for (int i = 0;i < 4;i++) {
+//		channel[i]->move(360, 1000);
+//
+//	}
+//
+//}
 /*!
 Constructor. Initilizes Arduino pins connected to the Kangaroo.
 \param potPin the Arduino analog pin number. Default is 0.

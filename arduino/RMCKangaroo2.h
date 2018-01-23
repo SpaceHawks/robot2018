@@ -84,11 +84,12 @@ public:
 
 class Motor : public KangarooChannel, public Actuator {
 public:
-
 	Motor(KangarooSerial& K, char name);
 	long speedLimit;
 	long lastSpeed = 1;
 	long speed = 0;
+	int mode; //0 - speed , 1 - position
+	long targetPos;
 	long getCurrentSpeed();
 	void move(long angle, long speed);
 	void setSpeedLimit(long speed);
@@ -99,19 +100,27 @@ public:
 	//void setTargetVal(long val, long distance);
 	KangarooStatus status;
 	void begin();
+	void setTargetPos(long pos);
 };
 
 class Motors{
 public:
 	long drive = 101;
 	long turn = 101;
+	long angle;
+	long targetPos;
+	bool alreadySetTargetPos;
+	int mode;
 	Motor *channel[4];
 	Motors(KangarooSerial & K, char name);
 	long setTargetVal(long drive, long turn);
 	void setDrive(long drive);
 	void setTurn(long turn);
+	void setAngle(long angle);
+	void clearAngle();
 	void loop();
 	void begin();
+	void move();
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
 

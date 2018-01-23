@@ -82,6 +82,8 @@ void onI2CReceive(int numByte) {
 				motorK.setTargetVal(1, value);
 				motorK.setTargetVal(2, value);
 				break;
+			case 8:
+				break;
 			default:
 				break;
 			}
