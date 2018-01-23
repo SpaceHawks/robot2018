@@ -192,53 +192,9 @@ void LinearActuatorPair::loop()
 			channel[1]->setTargetPos(tempTargetVal);
 		}
 	}
-	
-
 	channel[0]->loop();
 	channel[1]->loop();
-
-
-	//long tempTargetVal = targetVal;
-	//long la1 = channel[0]->status.value();
-	//long la2 = channel[1]->status.value();
-	//Input = -(la1 - la2);
-	//long gap = Input;
-	//syncPID->Compute();
-	//Serial.println(String(gap) + "     " + String(Output));
-	//long scaledLa1 = map(la1, channel[0]->min, channel[0]->max, 0, 100);
-	//if ((tempTargetVal - scaledLa1) > 5)
-	//{
-	//	channel[1]->setSpeed(speed + Output);
-	//}
-	//else if ((tempTargetVal - scaledLa1) < -5)
-	//{
-	//	channel[1]->setSpeed(speed - Output);
-	//}
-
-	////Serial.println(gap);
-	//if (abs(gap) > 20)
-	//{
-	//	if (!isSyncing) {
-	//		isSyncing = true;
-	//		channel[0]->setTargetPosDirect(la1);
-	//		channel[1]->setTargetPosDirect(la1);
-	//	}
-	//}
-	//else {
-	//	if (isSyncing && abs(gap) < 15)
-	//	{
-	//		isSyncing = false;
-	//	}
-	//	channel[0]->setTargetPos(tempTargetVal);
-	//	channel[1]->setTargetPos(tempTargetVal);
-	//}
-
-	//channel[0]->loop();
-	//channel[1]->loop();
-
-
-
-
+	
 
 }
 	//	if (!syncHaveBeenDetected) //have not detected unsynced
@@ -289,29 +245,22 @@ void Motor::begin()
 void Motor::loop()
 {
 	long tempSpeed = speed;
-	//Serial.println("tempSpeed "+String(tempSpeed));
-	//Serial.println("lastSpeed " + String(lastSpeed));
-	//Serial.println("speedLimit " + String(speedLimit));
+
 	if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
 	{
 		s(tempSpeed);
 		lastSpeed = tempSpeed;
-		Serial.println("motor loop sent");
+
 	}
 }
 
-//
+
 void Motor::setTargetSpeed(long speed) {
 	if (speed >= -100 && speed <= 100) {
 		this->speed = map(speed, -100, 100, -speedLimit, speedLimit);
 	}
 }
 
-//void Motor::setTargetVal(long val, long distance)
-//{
-//	setTargetSpeed(val);
-//	//setTargetDistance(distance);
-//}
 
 long Motor::getCurrentSpeed()
 {
@@ -324,18 +273,7 @@ void Motor::setSpeedLimit(long speed)
 		speedLimit = speed;
 	}
 }
-//void Motor::moveAtSpeed(long val, long newSpeed)
-//{
-//
-//}
 
-//void motor::move(long val)
-//{
-//	long speedlimit = maxspeed;
-//	pi(val, speedlimit);
-//	//done = true;
-//
-//}
 Motors::Motors(KangarooSerial & K, char name)
 {
 	
@@ -462,14 +400,11 @@ Sets target value to selected channel.
 \param channel number, value.
 */
 void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
-															 //int index = getChannelIndex(channelName);
-
-															 //channel[0]->setTargetVal(val);
+															 //int index = getChannelIndex(channelName);												 //channel[0]->setTargetVal(val);
 															 //channel[1]->setTargetVal(val);
 															 //channel[index]->setTargetVal(val);
-
-															 //if (val >= 0 && val <= 100) {
+										 //if (val >= 0 && val <= 100) {
 															 //	targetVal1 = map(val, 0, 100, channel[0]->min, channel[0]->max);
 															 //}
-	channel[0]->setTargetVal(50, val);
+	channel[0]->setTargetVal(70, val);
 }

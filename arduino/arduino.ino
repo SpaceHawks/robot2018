@@ -22,7 +22,7 @@ void setup() {
 	Serial.println("start begin setup");
 	motorK.begin();
 	Serial.println("end setup");
-	motorK.setTargetVal(3,90);
+	motorK.setTargetVal(3,100);
 }
 void loop() {
 
