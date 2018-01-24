@@ -1,13 +1,10 @@
 #include "RMCKangaroo2.h"
-
-
 /*!
 Constructor
 */
 LinearActuator::LinearActuator(KangarooSerial& K, char name):KangarooChannel(K, name)
 {
 }
-
 /*!
 Initiates the Kangaroo. Gets min and max positions for Linear Actuator.
 */
@@ -89,7 +86,6 @@ long LinearActuator::getCurrentVal()
 {
 	return status.value();
 }
-
 /*!
 Constructor
 Instantiates PID control object. Sets default values and range.
@@ -104,7 +100,6 @@ LinearActuatorPair::LinearActuatorPair(KangarooSerial & K, char name)
 	channel[0] = new LinearActuator(K, name);
 	channel[1] = new LinearActuator(K, name+1);
 }
-
 /*!
 \
 */
@@ -112,14 +107,6 @@ long * LinearActuatorPair::getCurrentVal()
 {
 	return nullptr;
 }
-
-//
-//void LinearActuatorPair::setTargetVal(long pos, long newSpeed)
-//{
-//	Serial.println("LAPair setTargetVal is empty.");
-//
-//}
-
 /*!
 \
 */
@@ -133,7 +120,6 @@ void LinearActuatorPair::setSpeed(long newSpeed)
 		speed = newSpeed;
 	}
 }
-
 /*!
 Sets target value for position of Linear Actuator.
 */
@@ -141,7 +127,6 @@ void LinearActuatorPair::setTargetPos(long pos)
 {
 	targetVal = pos;
 }
-
 /*!
 Computes gap between Linear Actuators and fixes it if greater than tolerance.
 Moves Linear Actuator Pair to target value controlled by PID. 
@@ -193,78 +178,9 @@ void LinearActuatorPair::loop()
 		}
 	}
 	
-
 	channel[0]->loop();
 	channel[1]->loop();
-
-
-	//long tempTargetVal = targetVal;
-	//long la1 = channel[0]->status.value();
-	//long la2 = channel[1]->status.value();
-	//Input = -(la1 - la2);
-	//long gap = Input;
-	//syncPID->Compute();
-	//Serial.println(String(gap) + "     " + String(Output));
-	//long scaledLa1 = map(la1, channel[0]->min, channel[0]->max, 0, 100);
-	//if ((tempTargetVal - scaledLa1) > 5)
-	//{
-	//	channel[1]->setSpeed(speed + Output);
-	//}
-	//else if ((tempTargetVal - scaledLa1) < -5)
-	//{
-	//	channel[1]->setSpeed(speed - Output);
-	//}
-
-	////Serial.println(gap);
-	//if (abs(gap) > 20)
-	//{
-	//	if (!isSyncing) {
-	//		isSyncing = true;
-	//		channel[0]->setTargetPosDirect(la1);
-	//		channel[1]->setTargetPosDirect(la1);
-	//	}
-	//}
-	//else {
-	//	if (isSyncing && abs(gap) < 15)
-	//	{
-	//		isSyncing = false;
-	//	}
-	//	channel[0]->setTargetPos(tempTargetVal);
-	//	channel[1]->setTargetPos(tempTargetVal);
-	//}
-
-	//channel[0]->loop();
-	//channel[1]->loop();
-
-
-
-
-
 }
-	//	if (!syncHaveBeenDetected) //have not detected unsynced
-	//	{
-	//		syncHaveBeenDetected = true;
-	//		if (la1 > la2)
-	//		{
-
-	//			channel[1]->forceStop = true;
-	//		}
-	//		if (la1 < la2)
-	//		{
-	//			channel[0]->forceStop = true;
-	//		}
-	//		Serial.println("is not Sync");
-	//	}
-	//}
-	//else {
-	//	if (syncHaveBeenDetected) {
-	//		syncHaveBeenDetected = false;
-	//		channel[0]->forceStart = true;
-	//		channel[1]->forceStart = true;
-	//		Serial.println("is Sync");
-	//	}
-	//}
-	
 /*!
 Executes begin methods of all channels.
 Sets speed of Linear Actuator.
@@ -276,81 +192,50 @@ void LinearActuatorPair::begin()
 	channel[1]->begin();
 	setSpeed(94);
 }
-
 Motor::Motor(KangarooSerial& K, char name) :KangarooChannel(K, name)
 {
 }
-
 void Motor::begin()
 {
 	start();
 }
-
 void Motor::setTargetPos(long pos)
 {
-	mode = 1; 
+	mode = 1;
 	targetPos = pos;
 }
-
 void Motor::loop()
 {
-
 	long tempSpeed = speed;
 	//Serial.println("tempSpeed "+String(tempSpeed));
 	//Serial.println("lastSpeed " + String(lastSpeed));
 	//Serial.println("speedLimit " + String(speedLimit));
-	if (mode == 0) {
-		if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
-		{
-			s(tempSpeed);
-			lastSpeed = tempSpeed;
-			Serial.println("motor loop sent");
-
-		}
+	if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
+	{
+		s(tempSpeed);
+		lastSpeed = tempSpeed;
 	}
-	else if (mode == 1) {
-	//long val = angle / 360 * 2040;
-	targetPos -= getPi().value();
-	pi(targetPos, tempSpeed);
-	}
-	
 }
-
-//
 void Motor::setTargetSpeed(long speed) {
 	if (speed >= -100 && speed <= 100) {
 		this->speed = map(speed, -100, 100, -speedLimit, speedLimit);
 	}
 }
-
-//void Motor::setTargetVal(long val, long distance)
-//{
-//	setTargetSpeed(val);
-//	//setTargetDistance(distance);
-//}
-
 long Motor::getCurrentSpeed()
 {
 	return status.value();
 }
-
 void Motor::setSpeedLimit(long speed)
 {
 	if (speed > 0) {
 		speedLimit = speed;
 	}
 }
-//void Motor::moveAtSpeed(long val, long newSpeed)
-//{
-//
-//}
-
 void Motor::move(long angle, long speed)
 {
 	long val = angle / 360 * 2040;
 	pi(val, speed).wait();
 	//done = true;
-
 }
 
 Motors::Motors(KangarooSerial & K, char name)
@@ -364,147 +249,126 @@ Motors::Motors(KangarooSerial & K, char name)
 	}
 
 }
-long Motors::setTargetVal(long drive, long turn)
+void Motors::loop()
 {
-	setDrive(drive);
-	setTurn(turn);
+	for (int i = 0; i < 4; i++) {
+		channel[i]->mode = mode;
+	}
+	if (mode == 1 && alreadySetTargetPos == false) {
+		if (angle <= 180 && angle >= -180) {
+			long leftPos;
+			long rightPos;
+			if (angle < 0)
+			{
+				leftPos = -angle;
+				rightPos = angle;
+			}
+			else if (angle > 0)
+			{
+				leftPos = angle;
+				rightPos = -angle;
+			}
+			else {
+				leftPos = targetPos;
+				rightPos = targetPos;
+			}
+			channel[FRONT_LEFT]->setTargetPos(-leftPos);
+			channel[FRONT_RIGHT]->setTargetPos(-rightPos);
+			channel[REAR_LEFT]->setTargetPos(leftPos);
+			channel[REAR_RIGHT]->setTargetPos(rightPos);
+			alreadySetTargetPos = true; //fix this
+		}
+	}
+	long tempTurn = turn;
+	long tempDrive = drive;
+	if ((tempDrive <= 100 && tempDrive >= -100) && (tempTurn <= 100 && tempTurn >= -100)) {
+		long leftSpeed = tempDrive;
+		long rightSpeed = tempDrive;
+		if (tempTurn == -100) {
+			leftSpeed = -tempDrive;
+		}
+		else if (tempTurn < 0 && tempTurn >-100) {
+			leftSpeed = tempDrive * (1 + (float)tempTurn / 100);
+		}
+		else if (tempTurn == 0) {
+		}
+		else if (tempTurn < 100 && tempTurn > 0) {
+			rightSpeed = tempDrive * (1 - (float)tempTurn / 100);
+		}
+		else if (tempTurn == 100) {
+			rightSpeed = -tempDrive;
+		}
+		channel[FRONT_LEFT]->setTargetSpeed(-leftSpeed);
+		channel[FRONT_RIGHT]->setTargetSpeed(-rightSpeed);
+		channel[REAR_LEFT]->setTargetSpeed(leftSpeed);
+		channel[REAR_RIGHT]->setTargetSpeed(rightSpeed);
+	}
+	for (int i = 0; i < 4; i++)
+	{
+		if (channel[i]->done == true)
+		{
+			channel[i]->done == false;
+			channel[i]->setTargetSpeed(0);
+		}
+		channel[i]->loop();
+	}
 }
-
+void Motors::begin()
+{
+	for (int i = 0; i < 4; i++) {
+		channel[i]->begin();
+	}
+}
 void Motors::setDrive(long drive)
 {
 	if (drive >= -100 && drive <= 100) {
 		this->drive = drive;
 	}
 }
-
 void Motors::setTurn(long turn)
 {
 	if (turn >= -100 && turn <= 100) {
 		this->turn = turn;
 	}
 }
-
-void Motors::setAngle(long angle)
-{
-	this->angle += angle;
-}
-
 void Motors::clearAngle()
 {
 	angle = 0;
 }
-
-void Motors::loop()
+void Motors::setPos(long pos)
 {
-	for (int i = 0;i < 4;i++) {
-		channel[i]->mode=this->mode;
-	}
-
-		long tempTurn = turn;
-		long tempDrive = drive;
-		if ((tempDrive <= 100 && tempDrive >= -100) && (tempTurn <= 100 && tempTurn >= -100)) {
-			long leftSpeed = tempDrive;
-			long rightSpeed = tempDrive;
-			if (tempTurn == -100) {
-				leftSpeed = -tempDrive;
-				//Serial.print(String(0) + " ");
-			}
-			else if (tempTurn < 0 && tempTurn >-100) {
-				leftSpeed = tempDrive * (1 + (float)tempTurn / 100);
-				//Serial.print(String(1) + " ");
-			}
-			else if (tempTurn == 0) {
-				//Serial.print(String(2) + " ");
-			}
-			else if (tempTurn < 100 && tempTurn > 0) {
-				rightSpeed = tempDrive * (1 - (float)tempTurn / 100);
-				//Serial.print(String(3) + " ");
-			}
-			else if (tempTurn == 100) {
-				rightSpeed = -tempDrive;
-				//Serial.print(String(4) + " ");
-			}
-
-			Serial.println(String(leftSpeed) + " " + String(rightSpeed));
-			channel[FRONT_LEFT]->setTargetSpeed(-leftSpeed);
-			channel[FRONT_RIGHT]->setTargetSpeed(-rightSpeed);
-			channel[REAR_LEFT]->setTargetSpeed(leftSpeed);
-			channel[REAR_RIGHT]->setTargetSpeed(rightSpeed);
-
-			if (mode == 1 && alreadySetTargetPos = false;) {
-				channel[FRONT_LEFT]->setTargetPos(-targetPos);
-				channel[FRONT_RIGHT]->setTargetPos(-targetPos);
-				channel[REAR_LEFT]->setTargetPos(targetPos);
-				channel[REAR_RIGHT]->setTargetPos(targetPos);
-				alreadySetTargetPos = true; //fix this
-			}
-		}
-	}
-
-	for (int i = 0;i < 4;i++) {
-		channel[i]->loop();
+	mode = 1;
+	targetPos = pos*2040;
+	alreadySetTargetPos == false;
+}
+void Motors::setAngle(long angle)
+{
+	if (angle >= -180 && angle <= 180)
+	{
+		mode = 1;
+		this->angle = angle*2040;
+		alreadySetTargetPos == false;
 	}
 }
-
-void Motors::begin()
-{
-	for (int i = 0;i < 4;i++) {
-		channel[i]->begin();
-
-	}
-	move();
-	
-}
-
-void Motors::setTargetPos(long pos)
-{
-	
-}
-
-
-void Motors::v()
-{
-	for (int i = 0;i < 4;i++) {
-		channel[i]->begin();
-
-	}
-	move();
-
-}
-
-//void Motors::move()
-//{
-//	for (int i = 0;i < 4;i++) {
-//		channel[i]->move(360, 1000);
-//
-//	}
-//
-//}
 /*!
 Constructor. Initilizes Arduino pins connected to the Kangaroo.
 \param potPin the Arduino analog pin number. Default is 0.
 */
-RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType)
+RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin)
 {
-	this->channelList = channelList;
-	this->channelType = channelType;
 	SerialPort = new SoftwareSerial(rxPin, txPin);
 	K = new KangarooSerial(*SerialPort);
-
-	for (int i = 0; i < channelList.length(); i++) {
-		channel[i] = new Motors(*K, channelList[i]);
-		channelIndex[(int)(channelList[i] - 49)] = i; //if channel is 1, index is 0
-	}
+	motors = new Motors(*K, '3');
+	//linearActuatorPair = new LinearActuatorPair(*K, '1');
 }
 /*!
 Executes the loop of the right Linear Actuator
 */
 void RMCKangaroo1::loop()
 {
-	channel[0]->loop();
-
+	motors->loop();
+	//linearActuatorPair->loop();
 }
-
 /*!
 Initiates Serial Communication.
 Executes begin methods of all Linear Actuators and Motors.
@@ -512,46 +376,6 @@ Executes begin methods of all Linear Actuators and Motors.
 void RMCKangaroo1::begin() {
 	SerialPort->begin(9600);
 	SerialPort->listen();
-
-	for (int i = 0; i< channelList.length(); i++)
-		channel[i]->begin();
-
-	for (int i = 0; i < channelList.length(); i++) {
-		if (channelType[i] == 'l') {
-		}
-		else if (channelType[i] == 'm') {
-		}
-	}
-}
-/*!
-Sets target value to selected channel.
-\param channel number, value.
-*/
-void RMCKangaroo1::setTargetVal(int channelName, long val) { //val = 0% to 100%
-															 //int index = getChannelIndex(channelName);
-
-															 //channel[0]->setTargetVal(val);
-															 //channel[1]->setTargetVal(val);
-															 //channel[index]->setTargetVal(val);
-
-															 //if (val >= 0 && val <= 100) {
-															 //	targetVal1 = map(val, 0, 100, channel[0]->min, channel[0]->max);
-															 //}
-	channel[0]->setDrive(val);
-}
-/*!
-Sets target value to selected channel.
-\param channel number, value.
-*/
-void RMCKangaroo1::setTargetVal1(int channelName, long val) { //val = 0% to 100%
-															 //int index = getChannelIndex(channelName);
-
-															 //channel[0]->setTargetVal(val);
-															 //channel[1]->setTargetVal(val);
-															 //channel[index]->setTargetVal(val);
-
-															 //if (val >= 0 && val <= 100) {
-															 //	targetVal1 = map(val, 0, 100, channel[0]->min, channel[0]->max);
-															 //}
-	channel[0]->setTurn(val);
+	motors->begin();
+	//linearActuatorPair->begin();
 }

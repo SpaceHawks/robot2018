@@ -85,6 +85,7 @@ public:
 class Motor : public KangarooChannel, public Actuator {
 public:
 	Motor(KangarooSerial& K, char name);
+	bool done = false;
 	long speedLimit;
 	long lastSpeed = 1;
 	long speed = 0;
@@ -107,20 +108,19 @@ class Motors{
 public:
 	long drive = 101;
 	long turn = 101;
-	long angle;
-	long targetPos;
-	bool alreadySetTargetPos;
-	int mode;
+	long angle = 0;
+	long targetPos = 0;
+	bool alreadySetTargetPos = true;
+	int mode = 0;
 	Motor *channel[4];
 	Motors(KangarooSerial & K, char name);
-	long setTargetVal(long drive, long turn);
 	void setDrive(long drive);
 	void setTurn(long turn);
 	void setAngle(long angle);
 	void clearAngle();
 	void loop();
 	void begin();
-	void move();
+	void setPos(long pos);
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
 
@@ -138,17 +138,17 @@ class RMCKangaroo1
 protected:
 	int channelIndex[DEFAULT_NUMBER_OF_CHANNEL];
 	Motors* channel[DEFAULT_NUMBER_OF_CHANNEL];
+	
 	SoftwareSerial* SerialPort;
 	KangarooSerial* K;
 	String channelList;
 	String channelType;
 
 public:
-
-	RMCKangaroo1(int rxPin, int txPin, String channelList, String channelType);
+	Motors* motors;
+	LinearActuatorPair* linearActuatorPair;
+	RMCKangaroo1(int rxPin, int txPin);
 	void loop();
 	void begin();
-	void setTargetVal(int channelName, long val);
-	void setTargetVal1(int channelName, long val);
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
 };
