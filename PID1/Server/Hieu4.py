@@ -191,7 +191,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.label_7)
         self.verticalSlider = QtWidgets.QSlider(self.centralWidget)
         self.verticalSlider.setGeometry(QtCore.QRect(600, 200, 21, 181))
-        self.verticalSlider.setMinimum(-100)
+        self.verticalSlider.setMinimum(0)
         self.verticalSlider.setMaximum(100)
         self.verticalSlider.setSingleStep(5)
         self.verticalSlider.setOrientation(QtCore.Qt.Vertical)
@@ -378,14 +378,42 @@ def sliderDisplay_6():
 from arduino import *
 arduino = Arduino(i2cAddress = 7)
 
-def drive(speed): #Calling for left motor
-    ui.blank_6.setText(str(speed))
+def forward(speed):
     arduino.motor(1, speed)
     arduino.motor(2, 0)
+    
+def backward(speed):
+    arduino.motor(1, -speed)
+    arduino.motor(2, 0)
+
+def right(speed):
+    arduino.motor(1, speed)
+    arduino.motor(2, 100)
+def left(speed):
+    arduino.motor(1, speed)
+    arduino.motor(2, -100)
+    
+def setDrive(speed): #Calling for left motor
+    if ui.StickyButton.isChecked():
+        arduino.motor(1, speed)
+        ui.blank_6.setText(str(speed))
+    
 def stop():
     arduino.motor(1, 0)
-    arduino.motor(2, 0)
-      
+    ui.blank_6.setText(str(0))
+    ui.verticalSlider.setValue(0)
+    ui.blank_5.setText(str(0))
+    ui.horizontalSlider_5.setValue(0)
+
+
+def pause():
+    if not ui.StickyButton.isChecked():
+        arduino.motor(1, 0)
+    
+def setTurn(speed):
+    ui.blank_5.setText(str(speed))
+    arduino.motor(2, speed)
+
         
 #initialize the main window gui
 import sys
@@ -396,18 +424,25 @@ MainWindow.setMouseTracking(True)
 ui = Ui_MainWindow()
 ui.setupUi(MainWindow)
 #connects buttons to funtions
-ui.forwardButton.pressed.connect(forwardPressed)
-ui.forwardButton.released.connect(forwardReleased)
-ui.backButton.pressed.connect(reverse)
-ui.rightButton.pressed.connect(right)
-ui.leftButton.pressed.connect(left)
+ui.forwardButton.pressed.connect(lambda: forward(ui.verticalSlider.value()))
+ui.forwardButton.released.connect(pause)
+ui.backButton.pressed.connect(lambda: backward(ui.verticalSlider.value()))
+ui.backButton.released.connect(pause)
+ui.rightButton.pressed.connect(lambda: right(ui.verticalSlider.value()))
+ui.rightButton.released.connect(pause)
+ui.leftButton.pressed.connect(lambda: left(ui.verticalSlider.value()))
+ui.leftButton.released.connect(pause)
+ui.stopButton.pressed.connect(stop)
 ui.horizontalSlider_1.valueChanged.connect(sliderDisplay_1)
 ui.horizontalSlider_2.valueChanged.connect(sliderDisplay_2)
 ui.horizontalSlider_3.valueChanged.connect(sliderDisplay_3)
 ui.horizontalSlider_4.valueChanged.connect(sliderDisplay_4)
-ui.horizontalSlider_5.valueChanged.connect(sliderDisplay_5)
 
-ui.verticalSlider.valueChanged.connect(lambda: drive(ui.verticalSlider.value()))#ui.verticalSlider.value()))
+#Turn Control
+ui.horizontalSlider_5.valueChanged.connect(lambda: setTurn(ui.horizontalSlider_5.value()))
+
+#Drive Control
+ui.verticalSlider.valueChanged.connect(lambda: setDrive(ui.verticalSlider.value()))#ui.verticalSlider.value()))
 
 ui.StickyButton.toggled.connect(sticky)
 #from PySide import QtGui
