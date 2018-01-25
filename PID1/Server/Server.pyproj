@@ -28,6 +28,7 @@
     <Compile Include="client.py" />
     <Compile Include="constants.py" />
     <Compile Include="gui.py" />
+    <Compile Include="Hieu4.py" />
     <Compile Include="motorControlGui.py" />
     <Compile Include="rplidar1.py">
       <SubType>Code</SubType>

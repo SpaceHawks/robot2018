@@ -1,6 +1,6 @@
 from arduino import *
 import time
-from motorControlGui import Ui_MotorWindow
+from Hieu4 import Ui_MainWindow
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 arduino = Arduino(i2cAddress = 7)
@@ -29,48 +29,53 @@ class Timer:
         """
         return (time.time() - self.startTime)
 timer=Timer()
-def motorLeft(speed): #Calling for left motor
-    ui.numberDisplayTopLeft.display(speed)
+def drive(speed): #Calling for left motor
+    ui.blank_5.setText(str(sliderValue_5))
     timer.reset()
+    print("Hieu")
     while(timer.getTime()<2):
         if(GPIO.input(4) == 1):
-            arduino.motor(3, speed)
+            arduino.motor(1, sliderValue_5)
+            arduino.motor(2, 0)
             time.sleep(0.03)
             break
         else:
             time.sleep(0.01)
 
-def motorRight(speed): #Calling for right motor
-    ui.numberDisplayTopRight.display(speed)
+def turn(speed): #Calling for right motor
+    ui.blank_6.setText(str(sliderValue_6))
     timer.reset()
     while(timer.getTime()<2):
         if(GPIO.input(4) == 1):
-            arduino.motor(1, speed)
+            arduino.motor(2, speed)
             time.sleep(0.03)
             break
         else:
             time.sleep(0.01)
 
-def motorMaster(speed): #Calling for both motor 
-    ui.numberDisplayTopMiddle.display(speed)
-    ui.sliderLeft.setValue(speed)
-    ui.sliderRight.setValue(speed)
-    motorLeft(speed)
-    motorRight(speed)
+##def motorMaster(speed): #Calling for both motor 
+ ##   ui.numberDisplayTopMiddle.display(speed)
+   ## ui.sliderLeft.setValue(speed)
+   ## ui.sliderRight.setValue(speed)
+    ##motorLeft(speed)
+    ##motorRight(speed)
 
 def stop():
-    ui.sliderCenter.setValue(0)
-    motorMaster(0)
+    ui.blank_5.setText(0)
 
     
 app = QtWidgets.QApplication(sys.argv)
 MainWindow = QtWidgets.QMainWindow()
-ui = Ui_MotorWindow()
+ui = Ui_MainWindow()
 ui.setupUi(MainWindow)
-ui.sliderLeft.sliderReleased.connect(lambda: motorLeft(ui.sliderLeft.value())) #function for left slider
-ui.sliderRight.sliderReleased.connect(lambda: motorRight(ui.sliderRight.value())) #function for right slider
-ui.sliderCenter.sliderReleased.connect(lambda: motorMaster(ui.sliderCenter.value())) #function for center slider
-ui.buttonStop.clicked.connect(stop) #Set speed to zero
+
+ui.horizontalSlider_1.valueChanged.connect(lambda: motorMaster(ui.sliderCenter.value())) #function for center slider
+ui.horizontalSlider_2.valueChanged.connect(lambda: motorMaster(ui.sliderCenter.value())) #function for center slider
+ui.horizontalSlider_3.valueChanged.connect(lambda: motorMaster(ui.sliderCenter.value())) #function for center slider
+ui.horizontalSlider_4.valueChanged.connect(lambda: motorMaster(ui.sliderCenter.value())) #function for center slider
+ui.verticalSlider.valueChanged.connect(lambda:  ui.horizontalSlider_5.setValue(sliderValue_5)) #function for left slider
+ui.horizontalSlider_5.valueChanged.connect(lambda: ui.blank_6.setText(str(sliderValue_6))) #function for right slider
+ui.stopButton.clicked.connect(stop) #Set speed to zero
 MainWindow.show()
 
 
