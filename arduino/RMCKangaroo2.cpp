@@ -9,7 +9,6 @@ LinearActuator::LinearActuator(KangarooSerial& K, char name):KangarooChannel(K, 
 Initiates the Kangaroo. Gets min and max positions for Linear Actuator.
 */
 void LinearActuator::begin() {
-
 	start();
 	getExtremes();
 }
