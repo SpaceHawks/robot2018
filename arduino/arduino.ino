@@ -47,25 +47,20 @@ void setup() {
 	
 	//motorK.setTargetSpeed(3, 50);
 	
-	//i2cSetup();
 	
 	motorK.begin();
+	i2cSetup();
 	Serial.println("start begin setup");
 	Serial.println("end setup");
 	//motorK.setMotorMaxSpeed(3, 20000);
-	
-	motorK.motors->setDrive(70);
-	//motorK.motors->mode = 0;
-	motorK.motors->setTurn(10);
-	
-	
+		
 	//motorK.setTargetVal(3,90);
 //	timer.setInterval(1, acce);
 }
 void loop() {
 	//timer.run();
 	motorK.loop();
-	//Serial.println(String(motorK.motors->getLeftMotorS())+ "speed");
+	//Serial.println(String(motorK.motors->getLeftMotorS())+ "speed"+String(motorK.motors->getLeftMotorS()));
 	//{@Plot.Velocity.Velo.Red aX}, {@Plot.Position.Min.Green linearK.min1}, setValue is {setValue =?},  {@Plot.Speed.SetSpeed.Red setMotorSpeed}, {@Plot.Speed.CurrentSpeed.Green motorK.status1->value()}, setMotorSpeed is {setMotorSpeed =?}
 	delay(1);
 }

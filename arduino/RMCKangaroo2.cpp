@@ -327,12 +327,12 @@ void Motors::begin()
 }
 long Motors::getLeftMotorS()
 {
-	return map(-channel[REAR_LEFT]->getCurrentSpeed(), -(channel[REAR_LEFT]->speedLimit), channel[REAR_LEFT]->speedLimit, -100, 100);
+	return map(-channel[FRONT_LEFT]->status.value(), -(channel[FRONT_LEFT]->speedLimit), channel[FRONT_LEFT]->speedLimit, -100, 100);
 }
 
 long Motors::getRightMotorS()
 {
-	return map(channel[REAR_RIGHT]->status.value(), -(channel[REAR_RIGHT]->speedLimit), channel[REAR_RIGHT]->speedLimit, -100, 100);
+	return map(-channel[FRONT_RIGHT]->status.value(), -(channel[FRONT_RIGHT]->speedLimit), channel[FRONT_RIGHT]->speedLimit, -100, 100);
 }
 
 void Motors::setDrive(long drive)
