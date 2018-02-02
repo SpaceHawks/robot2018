@@ -1,4 +1,5 @@
 #include "RMCKangaroo2.h"
+
 /*!
 Constructor
 */
@@ -105,6 +106,10 @@ LinearActuatorPair::LinearActuatorPair(KangarooSerial & K, char name)
 long * LinearActuatorPair::getCurrentVal()
 {
 	return nullptr;
+}
+long LinearActuatorPair::getPos()
+{
+	return map(channel[0]->status.value(), channel[0]->min, channel[0]->max, 0, 100);
 }
 /*!
 \
@@ -213,7 +218,9 @@ void Motor::loop()
 	{
 		s(tempSpeed);
 		lastSpeed = tempSpeed;
+
 	}
+	status = getS();
 }
 void Motor::setTargetSpeed(long speed) {
 	if (speed >= -100 && speed <= 100) {
@@ -318,6 +325,16 @@ void Motors::begin()
 		channel[i]->begin();
 	}
 }
+long Motors::getLeftMotorS()
+{
+	return map(-channel[REAR_LEFT]->getCurrentSpeed(), -(channel[REAR_LEFT]->speedLimit), channel[REAR_LEFT]->speedLimit, -100, 100);
+}
+
+long Motors::getRightMotorS()
+{
+	return map(channel[REAR_RIGHT]->status.value(), -(channel[REAR_RIGHT]->speedLimit), channel[REAR_RIGHT]->speedLimit, -100, 100);
+}
+
 void Motors::setDrive(long drive)
 {
 	if (drive >= -100 && drive <= 100) {
@@ -353,9 +370,9 @@ void Motors::setAngle(long angle)
 Constructor. Initilizes Arduino pins connected to the Kangaroo.
 \param potPin the Arduino analog pin number. Default is 0.
 */
-RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin)
+RMCKangaroo2::RMCKangaroo2(USARTClass &serial)
 {
-	SerialPort = new SoftwareSerial(rxPin, txPin);
+	SerialPort = &serial;
 	K = new KangarooSerial(*SerialPort);
 	motors = new Motors(*K, '3');
 	//linearActuatorPair = new LinearActuatorPair(*K, '1');
@@ -363,7 +380,7 @@ RMCKangaroo1::RMCKangaroo1(int rxPin, int txPin)
 /*!
 Executes the loop of the right Linear Actuator
 */
-void RMCKangaroo1::loop()
+void RMCKangaroo2::loop()
 {
 	motors->loop();
 	//linearActuatorPair->loop();
@@ -372,9 +389,12 @@ void RMCKangaroo1::loop()
 Initiates Serial Communication.
 Executes begin methods of all Linear Actuators and Motors.
 */
-void RMCKangaroo1::begin() {
+void RMCKangaroo2::begin() {
+	//Serial.println("before");
 	SerialPort->begin(9600);
-	SerialPort->listen();
+	//delay(1000);
+//	Serial.print("Error");
+	//SerialPort->listen();
 	motors->begin();
 	//linearActuatorPair->begin();
 }
