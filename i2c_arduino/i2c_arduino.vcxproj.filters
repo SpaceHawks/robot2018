@@ -15,12 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="i2c_arduino.ino" />
+    <None Include="main.ino" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.i2c_arduino.vsarduino.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="i2c.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -1,0 +1,11 @@
+import smbus
+import time
+bus = smbus.SMBus(1)
+address = 0x04
+
+def writeNumber():
+  bus.write_block_data(address, 0, [2,3,6,8,9])
+  return -1
+    
+writeNumber()
+print("Sent 2,3,6,8,9")
