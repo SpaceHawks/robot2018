@@ -79,10 +79,10 @@ void acce() {
 }
 
 void i2cSetup() {
-	Wire.begin(I2CAddress);
-	Wire.setClock(96000L);
-	Wire.onReceive(onI2CReceive);
-	Wire.onRequest(onI2CRequest);
+	Wire1.begin(I2CAddress);
+	Wire1.setClock(96000L);
+	Wire1.onReceive(onI2CReceive);
+	Wire1.onRequest(onI2CRequest);
 	
 }
 
@@ -90,7 +90,7 @@ void onI2CReceive(int numByte) {
 	int message[MESSAGE_LENGTH];
 	int i = 0;
 	for (int i = 0; i < numByte; i++) {
-		message[i] = Wire.read();
+		message[i] = Wire1.read();
 	}
 	int systemCommand = message[0];
 	// 1 - from a controller
@@ -144,7 +144,7 @@ void onI2CRequest() {
 
 	//Wire.write(LINEAR_ACTUATOR_1); // Device ID
 	//Wire.write(linearActPos); //Linear actuator current position
-	Wire.write(leftMotorSpeed); //Speed for left motor speed
-	Wire.write(rightMotorSpeed); // Speed for right motor speed
+	Wire1.write(leftMotorSpeed); //Speed for left motor speed
+	Wire1.write(rightMotorSpeed); // Speed for right motor speed
 }
 
