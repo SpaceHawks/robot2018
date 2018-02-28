@@ -1,4 +1,4 @@
-//#include "Sabertooth.ino"
+//#include "Sabertooth.ino" //Test
 //#include "RMCKangarooChannel.h"
 //#include "RMCKangaroo1.h"
 //#include "SimpleTimer.h"
@@ -80,7 +80,7 @@ void acce() {
 
 void i2cSetup() {
 	Wire1.begin(I2CAddress);
-	Wire1.setClock(96000L);
+	Wire1.setClock(100000L);
 	Wire1.onReceive(onI2CReceive);
 	Wire1.onRequest(onI2CRequest);
 	
@@ -98,7 +98,8 @@ void onI2CReceive(int numByte) {
 	// 3 - x
 	int command = message[1];
 	int device = message[2];
-	int value = message[3];
+	int value1 = message[3]; //drive
+	int value2 = message[4]; //turn
 	switch (systemCommand)
 	{
 	case 0:
@@ -109,12 +110,16 @@ void onI2CReceive(int numByte) {
 		case 1:
 			switch (device)
 			{
+			case 0:
+				//Emergency Stop
+				motorK.motors->setDrive(0);
+				motorK.motors->setTurn(0);
 			case 1:
-				motorK.motors->setDrive((signed char)value);
+				motorK.motors->setDrive((signed char)value1);
 				motorK.motors->mode = 0;
 				break;
 			case 2:
-				motorK.motors->setTurn((signed char)value);
+				motorK.motors->setTurn((signed char)value2);
 				break;
 			case 3:
 				break;
@@ -127,6 +132,9 @@ void onI2CReceive(int numByte) {
 			case 8:
 				motorK.motors->setPos(2);
 				break;
+			case 10:
+				motorK.motors->setDrive((signed char)value1);
+				motorK.motors->setTurn((signed char)value2);
 			default:
 				break;
 			}
