@@ -1,5 +1,5 @@
 #pragma once
-#include <SoftwareSerial.h>
+//#include <SoftwareSerial.h>
 #include <Kangaroo.h>
 #include <PID_v1.h>
 
@@ -67,6 +67,7 @@ public:
 	long lastSpeed;
 	bool isSyncing;
 	long *getCurrentVal();
+	long getPos();
 	//void setTargetVal(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
 	void setTargetPos(long pos);
@@ -120,6 +121,8 @@ public:
 	void clearAngle();
 	void loop();
 	void begin();
+	long getLeftMotorS();
+	long getRightMotorS();
 	void setPos(long pos);
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
@@ -133,21 +136,21 @@ public:
 \class RMCKangaroo1
 \brief  This the main class for Kangaroo X2 Motion Controller
 */
-class RMCKangaroo1
+class RMCKangaroo2
 {
 protected:
 	int channelIndex[DEFAULT_NUMBER_OF_CHANNEL];
 	Motors* channel[DEFAULT_NUMBER_OF_CHANNEL];
 	
-	SoftwareSerial* SerialPort;
+	USARTClass* SerialPort;
 	KangarooSerial* K;
 	String channelList;
 	String channelType;
-
+	
 public:
 	Motors* motors;
 	LinearActuatorPair* linearActuatorPair;
-	RMCKangaroo1(int rxPin, int txPin);
+	RMCKangaroo2(USARTClass &serialPorta);
 	void loop();
 	void begin();
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];

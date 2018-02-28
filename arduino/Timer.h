@@ -9,7 +9,7 @@
 #include "WProgram.h"
 #endif
 
-class Timer
+class TimerClass
 {
 protected:
 public:
@@ -17,6 +17,9 @@ public:
 	void reset();
 	long getTime();
 	long baseTime;
-	Timer();
+	TimerClass();
 };
+
+extern TimerClass Timer;
+
 #endif
