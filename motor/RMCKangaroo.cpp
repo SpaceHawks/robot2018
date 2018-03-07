@@ -391,7 +391,7 @@ Executes begin methods of all Linear Actuators and Motors.
 */
 void RMCKangaroo::begin() {
 	//Serial.println("before");
-	SerialPort->begin(9600);
+	SerialPort->begin(38400);
 	//delay(1000);
 //	Serial.print("Error");
 	//SerialPort->listen();

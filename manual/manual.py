@@ -14,7 +14,6 @@ robot = Robot(ipAddress = "192.168.2.105")
 timer = QtCore.QTimer()
 timer.timeout.connect(robot.stillAlive)
 
-
 def connect():
     global timer
     robot.start()
@@ -141,14 +140,14 @@ def xbox360():
                         stop()
    
             elif event.type == JOYBUTTONDOWN:
-                #print ("Joystick '",joysticks[event.joy].get_name(),"' button",event.button,"pressed.")
-                if event.button == 0:
+                print ("Joystick '",joysticks[event.joy].get_name(),"' button",event.button,"pressed.")
+                if event.button == 0: #A
                     backward()
-                if event.button == 1:
+                if event.button == 1: #B
                     right()
-                if event.button == 2:
+                if event.button == 2: #X
                     left()
-                if event.button == 3:
+                if event.button == 3: #Y
                     forward()
                 if event.button == 4:
                     decrementDrive()

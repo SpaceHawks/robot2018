@@ -1,8 +1,6 @@
 #pragma once
-//#include <SoftwareSerial.h>
 #include <Kangaroo.h>
 #include <PID_v1.h>
-//#include "Arduino.h"
 
 #define DEFAULT_NUMBER_OF_CHANNEL 10
 #define FRONT_LEFT 1  //channel 4
