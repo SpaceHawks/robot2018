@@ -1,4 +1,3 @@
-
 #include "RMCKangaroo.h"
 RMCKangaroo motorK(Serial3);
 void setup() {
@@ -30,15 +29,12 @@ void serialEvent() {
 				switch (device)
 				{
 				case 0:
-					//Emergency Stop
-					motorK.motors->setDrive(0);
-					motorK.motors->setTurn(0);
+					//Emergency Stop. Should stop all motors
+					motorK.motors->drive(0,0);
+					break;
 				case 1:
-					motorK.motors->setDrive((signed char)value1);
-					motorK.motors->mode = 0;
 					break;
 				case 2:
-					motorK.motors->setTurn((signed char)value2);
 					break;
 				case 3:
 					break;
@@ -49,11 +45,12 @@ void serialEvent() {
 				case 6: //channel 1 and 2 together
 					break;
 				case 8:
-					motorK.motors->setPos(2);
 					break;
 				case 10:
-					motorK.motors->setDrive((signed char)value1);
-					motorK.motors->setTurn((signed char)value2);
+					motorK.motors->drive((signed char)value1, (signed char)value2);
+					break;
+				case 11:
+					motorK.motors->tankDrive((signed char)value1, (signed char)value2);
 					break;
 				default:
 					Serial.println("unhanddle command: " + String(command) + " " + String(device) + " " + String(value1) + " " + String(value2));

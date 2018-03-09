@@ -106,16 +106,19 @@ public:
 
 class Motors{
 public:
-	long drive = 101;
-	long turn = 101;
+	//long drive = 101;
+	long leftSpeed = 0;
+	long rightSpeed = 0;
+	//long turn = 101;
 	long angle = 0;
 	long targetPos = 0;
 	bool alreadySetTargetPos = true;
 	int mode = 0;
 	Motor *channel[4];
 	Motors(KangarooSerial & K, char name);
-	void setDrive(long drive);
-	void setTurn(long turn);
+	void drive(long drive, long turn);
+	//void setTurn(long turn);
+	void tankDrive(long leftSpeed, long rightSpeed);
 	void setAngle(long angle);
 	void clearAngle();
 	void loop();

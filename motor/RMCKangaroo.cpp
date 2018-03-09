@@ -285,30 +285,11 @@ void Motors::loop()
 			alreadySetTargetPos = true; //fix this
 		}
 	}
-	long tempTurn = turn;
-	long tempDrive = drive;
-	if ((tempDrive <= 100 && tempDrive >= -100) && (tempTurn <= 100 && tempTurn >= -100)) {
-		long leftSpeed = tempDrive;
-		long rightSpeed = tempDrive;
-		if (tempTurn == -100) {
-			leftSpeed = -tempDrive;
-		}
-		else if (tempTurn < 0 && tempTurn >-100) {
-			leftSpeed = tempDrive * (1 + (float)tempTurn / 100);
-		}
-		else if (tempTurn == 0) {
-		}
-		else if (tempTurn < 100 && tempTurn > 0) {
-			rightSpeed = tempDrive * (1 - (float)tempTurn / 100);
-		}
-		else if (tempTurn == 100) {
-			rightSpeed = -tempDrive;
-		}
-		channel[FRONT_LEFT]->setTargetSpeed(-leftSpeed);
-		channel[FRONT_RIGHT]->setTargetSpeed(-rightSpeed);
-		channel[REAR_LEFT]->setTargetSpeed(leftSpeed);
-		channel[REAR_RIGHT]->setTargetSpeed(rightSpeed);
-	}
+	//
+	channel[FRONT_LEFT]->setTargetSpeed(-leftSpeed);
+	channel[FRONT_RIGHT]->setTargetSpeed(-rightSpeed);
+	channel[REAR_LEFT]->setTargetSpeed(leftSpeed);
+	channel[REAR_RIGHT]->setTargetSpeed(rightSpeed);
 	for (int i = 0; i < 4; i++)
 	{
 		if (channel[i]->done == true)
@@ -335,18 +316,35 @@ long Motors::getRightMotorS()
 	return map(-channel[FRONT_RIGHT]->status.value(), -(channel[FRONT_RIGHT]->speedLimit), channel[FRONT_RIGHT]->speedLimit, -100, 100);
 }
 
-void Motors::setDrive(long drive)
+void Motors::drive(long drive, long turn)
 {
-	if (drive >= -100 && drive <= 100) {
-		this->drive = drive;
+	if (drive >= -100 && drive <= 100 && turn >= -100 && turn <= 100) {
+		//do left and right speed calciulation here
+		leftSpeed = drive;
+		rightSpeed = drive;
+		if (turn == -100) {
+			leftSpeed = -drive;
+		}
+		else if (turn < 0 && turn >-100) {
+			leftSpeed = drive * (1 + (float)turn / 100);
+		}
+		else if (turn < 100 && turn > 0) {
+			rightSpeed = drive * (1 - (float)turn / 100);
+		}
+		else if (turn == 100) {
+			rightSpeed = -drive;
+		}
 	}
 }
-void Motors::setTurn(long turn)
+
+void Motors::tankDrive(long leftSpeed, long rightSpeed)
 {
-	if (turn >= -100 && turn <= 100) {
-		this->turn = turn;
+	if (leftSpeed >= -100 && leftSpeed <= 100 && rightSpeed >= -100 && rightSpeed <= 100) {
+		this->leftSpeed = leftSpeed;
+		this->rightSpeed = rightSpeed;
 	}
 }
+
 void Motors::clearAngle()
 {
 	angle = 0;
