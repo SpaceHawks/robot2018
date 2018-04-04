@@ -54,6 +54,8 @@ maxAngleWhenMoving = 30
 maxAngle = 5 #deegrees
 maxDistance = 20
 
+currentTarget = None
+
 #xbox 360
 def initXbox360():
     global xboxController, arduino, xboxTimer
@@ -160,18 +162,27 @@ def initLidarGui():
     ui.setupUI(view)
     mw.show()
 def initLidar():
-    global lidar, lidarTimer
+    global lidar, lidarTimer, ui, goToTimer
     if platform.system() == "Darwin":
         port = '/dev/tty.SLAB_USBtoUART'
-    else:
+    elif platform.system() == "Linux":
         port = '/dev/ttyUSB0'
+    else:
+        port = 'COM3'
     lidar = RMCLidar(port, ui)
     correctOrientationTimer.timeout.connect(correctOrientation)
     lidar.lidarStarted.connect(lambda: lidarTimer.start(10))
-    lidar.lidarStarted.connect(goTo)
+    # lidar.lidarStarted.connect(goTo)
     lidar.lidarStopped.connect(lidarTimer.stop)
     lidarTimer.timeout.connect(lidar.update)
+    ui.pathAdded.connect(lambda: goToTimer.start(10))
+    ui.pathCleared.connect(clearCurrentTarget)
 
+
+def clearCurrentTarget():
+    global currentTarget, arduino
+    currentTarget = None
+    arduino.stop()
 #arduino
 def initArduino():
     global arduino
@@ -182,10 +193,10 @@ def initArduino():
         arduino = Arduino("/dev/ttyS1")
 
 #self moving
-def goTo():
-    if goToTimer.isActive():
-        goToTimer.stop()
-    goToTimer.start()
+# def goTo():
+#     if goToTimer.isActive():
+#         goToTimer.stop()
+#     goToTimer.start()
 
 def correctOrientation():
     global arduino, lidar, ui
@@ -209,9 +220,15 @@ def correctOrientation():
             ui.labelStatus.setText("See target, stop auto orient")
             correctOrientationTimer.stop()
             goToTimer.start(10)
-def _goTo():
-    global arduino, lidar
-    if lidar.newPos:
+def goTo():
+    global arduino, lidar, ui, currentTarget, goToTimer
+    if currentTarget == None:
+        if not ui.path.empty():
+            coordinate = ui.path.queue[0]
+            currentTarget = (coordinate.x(), coordinate.y())
+        else:
+            goToTimer.stop()
+    elif lidar.newPos:
         angleDiff = lidar.angleDiffTo((2000,0))
         ui.labelStatus.setText(str(int(angleDiff)))
         remainDistance = lidar.robotDistance
@@ -219,7 +236,8 @@ def _goTo():
             goToPID.clear()
             orientatinPID.clear()
             ui.labelStatus.setText("Arrived")
-            goToTimer.stop()
+            ui.arrive()
+            currentTarget = None
         else: #not arrived yet
             if abs(angleDiff) > maxAngleWhenMoving: #correct it
                 orientatinPID.clear()
@@ -239,7 +257,7 @@ def _goTo():
                 # arduino.drive(int(drive), int(turn))
                 ui.labelStatus.setText("Drive: "+ str(int(drive))+", Turn: "+ str(int(turn)))
 
-goToTimer.timeout.connect(_goTo)
+goToTimer.timeout.connect(goTo)
 correctOrientationTimer.timeout.connect(correctOrientation)
 if __name__ == '__main__':
     print("Running lidarTest.py")

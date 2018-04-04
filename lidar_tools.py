@@ -13,6 +13,7 @@ from pyqtgraph.Qt import QtGui, QtCore# (the example applies equally well to PyS
 import pyqtgraph as pg
 import numpy as np
 from rplidar import RPLidar
+from queue import Queue
 
 
 def markerDirection(firstPoint, lastPoint):
@@ -146,6 +147,8 @@ class LidarGUI(QtCore.QObject):
     # Scatter Plot example for clicked event
     # Text Item for text
     lidarFailed = QtCore.pyqtSignal()
+    pathCleared = QtCore.pyqtSignal()
+    pathAdded = QtCore.pyqtSignal()
     def __init__(self):
         super(LidarGUI, self).__init__()
         self.plots = []
@@ -155,6 +158,9 @@ class LidarGUI(QtCore.QObject):
         self.checkBoxes = [None]*5
         self.labelStatus = None
         self.labelSystemStatus = None
+        self.path = Queue()
+        self.pathItem = Queue()
+
 
     def setupUI(self, view):
         self.labelStatus = QtGui.QLabel("Status Status Status Status", view)
@@ -211,7 +217,40 @@ class LidarGUI(QtCore.QObject):
 
         self.plots[2].setXRange(0, 360, padding=0)
         self.plots[2].setYRange(0, 50, padding=0)
+        view.scene().sigMouseClicked.connect(self.onClick)
+        self.view = view
 
+    def onClick(self, event):
+        items = self.view.scene().items(event.scenePos())
+        for item in items:
+            if isinstance(item, pg.PlotItem) and item == self.plots[1]:
+                if event.modifiers() == pg.QtCore.Qt.ShiftModifier:
+                    coordinate = self.plots[1].vb.mapSceneToView(event.scenePos())
+                    self.path.put(coordinate)
+                    r = 50
+                    circle = pg.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
+                    circle.setPen(pg.mkPen('r'))
+                    circle.setBrush(pg.mkBrush('r'))
+                    self.plots[1].addItem(circle)
+                    circle.setPos(coordinate.x(), coordinate.y())
+                    self.pathItem.put(circle)
+                    self.pathAdded.emit()
+                if event.modifiers() == pg.QtCore.Qt.AltModifier:
+                    print("alt")
+                    while not self.path.empty():
+                        self.path.get()
+                        self.path.task_done()
+                    while not self.pathItem.empty():
+                        item = self.pathItem.get()
+                        self.plots[1].removeItem(item)
+                        self.pathItem.task_done()
+                    self.pathCleared.emit()
+    def arrive(self):
+        self.path.get()
+        self.path.task_done()
+        item = self.pathItem.get()
+        self.plots[1].removeItem(item)
+        self.pathItem.task_done()
 
     def addPlot(self, view):
         self.plots.append(view.addPlot())
