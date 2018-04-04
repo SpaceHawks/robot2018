@@ -1,17 +1,18 @@
-from arduino import Arduino
-from distance_sensor import *
-from PID import PID
-from xbox360 import Xbox360
+import lidar_tools, platform
+if platform.system() == "Linux":
+    from distance_sensor import *
+    from xbox360 import Xbox360
 
-from lidar_tools import *
-from rplidar import RPLidar
+from arduino import Arduino, FakeArduino
+from PID import PID
+from lidar_tools import RMCLidar, LidarGUI
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 
 gear = [20, 40, 60, 80, 100]
 gearIndex = 0
 
-arduino = Arduino("/dev/ttyS1")
+arduino = None
 
 stillAliveTimer = QtCore.QTimer()
 xboxTimer = QtCore.QTimer()
@@ -36,6 +37,22 @@ server = None
 PIDs = [None]*2
 PIDs[0] = PID(0.2, 0, 0)
 PIDs[1] = PID(0.2, 0, 0)
+
+goToTimer = QtCore.QTimer()
+correctOrientationTimer = QtCore.QTimer()
+
+
+orientatinPID = PID(1, 0, 0)
+goToPID = PID(0.1, 0, 0)
+
+orientatinPID.SetPoint = 0
+orientatinPID.setSampleTime(0.2)
+goToPID.SetPoint = 0
+goToPID.setSampleTime(0.2)
+
+maxAngleWhenMoving = 30
+maxAngle = 5 #deegrees
+maxDistance = 20
 
 #xbox 360
 def initXbox360():
@@ -141,114 +158,94 @@ def initLidarGui():
     mw.setCentralWidget(view)
     ui = LidarGUI()
     ui.setupUI(view)
-    ui.buttonConnectDisconnect.clicked.connect(connectDisconnect)
     mw.show()
-
-def connectDisconnect():
-    global lidar, ui
-    if ui.buttonConnectDisconnect.text() == "Connect":
-        if lidar == None and initLidar() == True:
-            ui.buttonConnectDisconnect.setText("Disconnect")
-    else:
-        stopLidar()
-        ui.buttonConnectDisconnect.setText("Connect")
-
-def stopLidar():
-    global lidarTimer, lidar
-    lidarTimer.stop()
-    if lidar is not None:
-        lidar.stop()
-        lidar.stop_motor()
-        lidar.disconnect()
-        lidar = None
-
 def initLidar():
-    global lidar, lidarTimer, ui
-    try:
-        # lidar = RPLidar('/dev/tty.SLAB_USBtoUART')
-        lidar = RPLidar('/dev/ttyUSB0')
-        info = lidar.get_info()
-        print(info)
-        health = lidar.get_health()
-        print(health)
-        iterator = lidar.iter_scans(max_buf_meas=2000)
-        next(iterator)
-        next(iterator)
-        next(iterator)
-        ui.iterator = iterator
-        ui.lidarFailed.connect(stopLidar)
-        lidarTimer.timeout.connect(ui.update)
-        lidarTimer.start(1)  # update frequency
-        return True
-    except:
-        print("Lidar failed, Check connection!")
-        stopLidar()
-        return False
+    global lidar, lidarTimer
+    if platform.system() == "Darwin":
+        port = '/dev/tty.SLAB_USBtoUART'
+    else:
+        port = '/dev/ttyUSB0'
+    lidar = RMCLidar(port, ui)
+    correctOrientationTimer.timeout.connect(correctOrientation)
+    lidar.lidarStarted.connect(lambda: lidarTimer.start(10))
+    lidar.lidarStarted.connect(goTo)
+    lidar.lidarStopped.connect(lidarTimer.stop)
+    lidarTimer.timeout.connect(lidar.update)
 
-goToTimer = QtCore.QTimer()
-correctOrientationTimer = QtCore.QTimer()
+#arduino
+def initArduino():
+    global arduino
+    global lidar, lidarTimer
+    if platform.system() == "Darwin":
+        arduino = FakeArduino("/dev/ttyS1")
+    else:
+        arduino = Arduino("/dev/ttyS1")
 
-maxAngle = 5 #deegrees
-
-orientatinPID = PID(1, 0, 0)
-goToPID = PID(0.1, 0, 0)
-
-orientatinPID.SetPoint = 0
-orientatinPID.setSampleTime(0.2)
-goToPID.SetPoint = 0
-goToPID.setSampleTime(0.2)
-
+#self moving
 def goTo():
     if goToTimer.isActive():
         goToTimer.stop()
-    correctOrientationTimer.start()
+    goToTimer.start()
 
 def correctOrientation():
-    global arduino
-    angleDiff = 30 #robot orientation - dest orientation
-    if abs(angleDiff) > maxAngle: #correct it
-        orientatinPID.update(angleDiff)
-        speed = orientatinPID.output
-        if speed > 100: speed = 100
-        if speed < -100: speed = -100
-        if speed > 0: arduino.right(abs(speed))
-        else: arduino.left(abs(speed))
-    else: #it's ready
-        correctOrientationTimer.stop()
-        goToTimer.start(10)
-
-maxAngleWhenMoving = 10
-maxDistance = 20
-def _goTo():
-    global arduino
-    angleDiff = 30 #robot orientation - dest orientation
-    remainDistance = 20
-    if remainDistance < maxDistance:#arrived
-        goToPID.clear()
-        orientatinPID.clear()
-        print("arrived")
-    else: #not arrived yet
-        if abs(angleDiff) > maxAngleWhenMoving: #correct it
-            orientatinPID.clear()
-            goToPID.clear()
-            goToTimer.stop()
-            correctOrientationTimer.start(10)
-        else: #it's ready
-            goToPID.update(remainDistance)
+    global arduino, lidar, ui
+    if lidar.newPos:
+        angleDiff = lidar.angleDiffTo((2000,0))
+        if abs(angleDiff) > maxAngle: #correct it
             orientatinPID.update(angleDiff)
-            drive = goToPID.output
-            turn = orientatinPID.output
-            if turn > 100: turn = 100
-            if drive > 100: drive = 100
-            if turn < -100: turn = -100
-            if drive < -100: drive = -100
-            arduino.drive(drive, turn)
+            speed = orientatinPID.output
+            if speed > 100: speed = 100
+            if speed < -100: speed = -100
+            if speed > 0:
+                # arduino.left(int(speed))
+                ui.labelStatus.setText("Left: " + str(int(speed)))
+                pass
+            else:
+                # arduino.right(int(-speed))
+                ui.labelStatus.setText("Right: " + str(int(-speed)))
+                pass
+        else: #it's ready
+            pass
+            ui.labelStatus.setText("See target, stop auto orient")
+            correctOrientationTimer.stop()
+            goToTimer.start(10)
+def _goTo():
+    global arduino, lidar
+    if lidar.newPos:
+        angleDiff = lidar.angleDiffTo((2000,0))
+        ui.labelStatus.setText(str(int(angleDiff)))
+        remainDistance = lidar.robotDistance
+        if remainDistance < maxDistance:#arrived
+            goToPID.clear()
+            orientatinPID.clear()
+            ui.labelStatus.setText("Arrived")
+            goToTimer.stop()
+        else: #not arrived yet
+            if abs(angleDiff) > maxAngleWhenMoving: #correct it
+                orientatinPID.clear()
+                goToPID.clear()
+                goToTimer.stop()
+                correctOrientationTimer.start(10)
+                ui.labelStatus.setText("Re-orienting")
+            else: #it's ready
+                goToPID.update(remainDistance)
+                orientatinPID.update(angleDiff)
+                drive = -goToPID.output
+                turn = -orientatinPID.output
+                if turn > 100: turn = 100
+                if drive > 100: drive = 100
+                if turn < -100: turn = -100
+                if drive < -100: drive = -100
+                # arduino.drive(int(drive), int(turn))
+                ui.labelStatus.setText("Drive: "+ str(int(drive))+", Turn: "+ str(int(turn)))
 
 goToTimer.timeout.connect(_goTo)
 correctOrientationTimer.timeout.connect(correctOrientation)
 if __name__ == '__main__':
     print("Running lidarTest.py")
     app = QtGui.QApplication([""])
-    initXbox360()
+    initArduino()
+    # initXbox360()
     initLidarGui()
+    initLidar()
     pg.QtGui.QApplication.exec_()

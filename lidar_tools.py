@@ -12,6 +12,8 @@ le plot as rapidly as possible to measure speed.
 from pyqtgraph.Qt import QtGui, QtCore# (the example applies equally well to PySide)
 import pyqtgraph as pg
 import numpy as np
+from rplidar import RPLidar
+
 
 def markerDirection(firstPoint, lastPoint):
     direction = np.degrees(np.arctan2(lastPoint[1] - firstPoint[1], lastPoint[0] - firstPoint[0])) + 90 #maker slope angle + 90
@@ -121,16 +123,47 @@ class Arena(pg.GraphicsObject):
         painter.drawLine(dumpObsLine)
 
 class LidarGUI(QtCore.QObject):
+    #
+    # ﻿#cross hair
+    # vLine = pg.InfiniteLine(angle=90, movable=False)
+    # hLine = pg.InfiniteLine(angle=0, movable=False)
+    # p1.addItem(vLine, ignoreBounds=True)
+    # p1.addItem(hLine, ignoreBounds=True)
+    #
+    #
+    # vb = p1.vb
+    #
+    # def mouseMoved(evt):
+    #     pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    #     if p1.sceneBoundingRect().contains(pos):
+    #         mousePoint = vb.mapSceneToView(pos)
+    #         index = int(mousePoint.x())
+    #         if index > 0 and index < len(data1):
+    #             label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (mousePoint.x(), data1[index], data2[index]))
+    #         vLine.setPos(mousePoint.x())
+    #         hLine.setPos(mousePoint.y())
+
+    # Scatter Plot example for clicked event
+    # Text Item for text
     lidarFailed = QtCore.pyqtSignal()
     def __init__(self):
         super(LidarGUI, self).__init__()
         self.plots = []
         self.curves = []
-        self.lineEdits = [None]*7
-        self.labels = [None]*7
+        self.lineEdits = [None]*8
+        self.labels = [None]*8
         self.checkBoxes = [None]*5
+        self.labelStatus = None
+        self.labelSystemStatus = None
 
     def setupUI(self, view):
+        self.labelStatus = QtGui.QLabel("Status Status Status Status", view)
+        self.labelSystemStatus = QtGui.QLabel("labelSystemStatus", view)
+        self.labelStatus.setStyleSheet("QLabel {color : green; }");
+        self.labelSystemStatus.setStyleSheet("QLabel {color : green; }");
+        self.labelStatus.move(500, 100)
+        self.labelSystemStatus.move(200,100)
+
         self.buttonConnectDisconnect = QtGui.QPushButton("Connect", view)
         self.buttonPauseResume = QtGui.QPushButton("Pause", view)
         down = 500
@@ -179,6 +212,7 @@ class LidarGUI(QtCore.QObject):
         self.plots[2].setXRange(0, 360, padding=0)
         self.plots[2].setYRange(0, 50, padding=0)
 
+
     def addPlot(self, view):
         self.plots.append(view.addPlot())
         self.curves.append(pg.ScatterPlotItem(size=5, pen=pg.mkPen(None)))
@@ -189,32 +223,6 @@ class LidarGUI(QtCore.QObject):
         self.robot.setPos(distance*np.cos(np.radians(angle)), distance*np.sin(np.radians(angle)))
         self.robot.setRotation(robotOrientation)
 
-
-
-#
-# ﻿#cross hair
-# vLine = pg.InfiniteLine(angle=90, movable=False)
-# hLine = pg.InfiniteLine(angle=0, movable=False)
-# p1.addItem(vLine, ignoreBounds=True)
-# p1.addItem(hLine, ignoreBounds=True)
-#
-#
-# vb = p1.vb
-#
-# def mouseMoved(evt):
-#     pos = evt[0]  ## using signal proxy turns original arguments into a tuple
-#     if p1.sceneBoundingRect().contains(pos):
-#         mousePoint = vb.mapSceneToView(pos)
-#         index = int(mousePoint.x())
-#         if index > 0 and index < len(data1):
-#             label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (mousePoint.x(), data1[index], data2[index]))
-#         vLine.setPos(mousePoint.x())
-#         hLine.setPos(mousePoint.y())
-
-#Scatter Plot example for clicked event
-#Text Item for text
-
-from rplidar import RPLidar
 class RMCLidar(QtCore.QObject):
     paras = ["ANGLE_GAP",
            "DIFF_GAP",
@@ -222,7 +230,8 @@ class RMCLidar(QtCore.QObject):
            "AVE_GAP_DX_DY",
            "AVE_DIST_GAP",
            "MARKER_LENGTH_MIN",
-           "MARKER_LENGTH_MAX"]
+           "MARKER_LENGTH_MAX",
+           "MARKER_QUALITY_MAX"]
     ANGLE_GAP = 0
     DIFF_GAP = 1
     AVE_ANGLE_GAP = 2
@@ -230,6 +239,7 @@ class RMCLidar(QtCore.QObject):
     AVE_DIST_GAP = 4
     MARKER_LENGTH_MIN = 5
     MARKER_LENGTH_MAX = 6
+    MARKER_QUALITY_MAX = 7
     flags = [
            "DEBUG_MODE",
             "SHOW_RAW_DATA",
@@ -258,6 +268,7 @@ class RMCLidar(QtCore.QObject):
         self.p[self.AVE_DIST_GAP] = 50
         self.p[self.MARKER_LENGTH_MIN] = 750
         self.p[self.MARKER_LENGTH_MAX] = 920
+        self.p[self.MARKER_QUALITY_MAX] = 1
         self.f = [None] * 10
         self.f[self.DEBUG_MODE] = True
         self.f[self.SHOW_RAW_DATA] = True
@@ -268,11 +279,10 @@ class RMCLidar(QtCore.QObject):
         self.iterator = None
         self.scan = None
 
-
         self.robotDistance = 0
         self.robotAngle = 0
         self.robotOrientation = 0
-        self.newPos = True
+        self.newPos = False
 
         self.lidarFailed.connect(self.stopLidar)
         self.lidar = None
@@ -319,12 +329,12 @@ class RMCLidar(QtCore.QObject):
             region = 0
             for i in range(scanLength - 1):  # make sure data points in continous angles are in one group.
                 angleFilter[i] = region
-                if angle[i + 1] - angle[i] > self.p[ANGLE_GAP]:
+                if angle[i + 1] - angle[i] > self.p[self.ANGLE_GAP]:
                     region += 1
 
             for i in range(-1, scanLength - 1, 1):  # connect 2 ends of circle
                 angleFilter[i] = region
-                if angle[i + 1] - angle[i] > self.p[ANGLE_GAP]:
+                if angle[i + 1] - angle[i] > self.p[self.ANGLE_GAP]:
                     break
 
             aveFilter = np.zeros(scanLength)
@@ -357,7 +367,7 @@ class RMCLidar(QtCore.QObject):
                         aveDydx = sumDydx / count
                         aveAngle = sumAngle / count
                         aveDist = sumDist / count
-                        if (abs(aveDist - dd[i]) < self.p[self.AVE_DIST_GAP] and (abs(aveDydx - dydx[i]) < self.p[AVE_GAP_DX_DY] or abs(
+                        if (abs(aveDist - dd[i]) < self.p[self.AVE_DIST_GAP] and (abs(aveDydx - dydx[i]) < self.p[self.AVE_GAP_DX_DY] or abs(
                                     aveAngle - dydxAngle[i]) < self.p[self.AVE_ANGLE_GAP])):  # yes straight line
                             sumDydx += dydx[i]
                             sumAngle += dydxAngle[i]
@@ -371,28 +381,38 @@ class RMCLidar(QtCore.QObject):
                             dontIncease = True
 
             sum = 0
+            SumQuality = 0
+            SumDistance = 0
             count = 0
             markerLength = np.zeros(scanLength)
             markerNum = 1
+
             for i in range(scanLength - 1):
                 if aveFilter[i] == aveFilter[i + 1]:
                     sum += dd[i]
+                    SumQuality += quality[i]
+                    SumDistance += distance[i]
                     count += 1
                     markerLength[i] = 0
                 else:
                     if count < 5:
                         sum = 0
+                        SumQuality = 0
+                        SumDistance = 0
                         count = 0
                     else:
-                        if sum > self.p[self.MARKER_LENGTH_MIN] and sum < self.p[MARKER_LENGTH_MAX]:
-                            for j in range(count + 1):
-                                markerLength[i - j] = markerNum
-                            markerNum += 1
+                        if sum > self.p[self.MARKER_LENGTH_MIN] and sum < self.p[self.MARKER_LENGTH_MAX]:
+                            if SumQuality // count > self.p[self.MARKER_QUALITY_MAX] - SumDistance // count // 500:
+                                for j in range(count + 1):
+                                    markerLength[i - j] = markerNum
+                                markerNum += 1
                         sum = 0
                         count = 0
             for i in range(-1, scanLength - 1):
                 if aveFilter[i] == aveFilter[i + 1]:
                     sum += dd[i]
+                    SumQuality += quality[i]
+                    SumDistance += distance[i]
                     count += 1
                     markerLength[i] = 0
                 else:
@@ -400,10 +420,11 @@ class RMCLidar(QtCore.QObject):
 
                         break
                     else:
-                        if sum > self.p[self.MARKER_LENGTH_MIN] and sum < self.p[MARKER_LENGTH_MAX]:
-                            for j in range(count):
-                                markerLength[i - j] = markerNum
-                            markerNum += 1
+                        if sum > self.p[self.MARKER_LENGTH_MIN] and sum < self.p[self.MARKER_LENGTH_MAX]:
+                            if SumQuality // count > self.p[self.MARKER_QUALITY_MAX] - SumDistance // count // 500:
+                                for j in range(count + 1):
+                                    markerLength[i - j] = markerNum
+                                markerNum += 1
                         break
 
             # display robot pos
@@ -416,6 +437,7 @@ class RMCLidar(QtCore.QObject):
                     (x[lastPointIndex], y[lastPointIndex]))
                 self.newPos = True
             else:
+
                 pass
                 # self.robot.blind(True)
 
@@ -448,7 +470,6 @@ class RMCLidar(QtCore.QObject):
 
     ## Make all plots clickable
 
-
     def clicked(self, plot, points):
         for p in self.lastClicked:
             p.resetPen()
@@ -480,6 +501,12 @@ class RMCLidar(QtCore.QObject):
             self.lidar.disconnect()
             self.lidar = None
 
+    def angleDiffTo(self, point):
+        robotX = self.robotDistance*np.cos(self.robotAngle)
+        robotY = self.robotDistance*np.sin(self.robotAngle)
+        targetOrientation = np.degrees(np.arctan2(point[1] - robotY,point[0] - robotX))
+        return self.robotOrientation - targetOrientation
+
     def changeParameter0(self, value):
         self.changeParameter(0, value)
     def changeParameter1(self, value):
@@ -494,6 +521,8 @@ class RMCLidar(QtCore.QObject):
         self.changeParameter(5, value)
     def changeParameter6(self, value):
         self.changeParameter(6, value)
+    def changeParameter7(self, value):
+        self.changeParameter(7, value)
     def changeParameter(self, index, value):
         value = is_number(value)
         if value != False:
@@ -573,7 +602,8 @@ class RMCLidar(QtCore.QObject):
         self.ui.lineEdits[3].textChanged.connect(self.changeParameter3)
         self.ui.lineEdits[4].textChanged.connect(self.changeParameter4)
         self.ui.lineEdits[5].textChanged.connect(self.changeParameter5)
-        self.ui.lineEdits[6].textChanged.connect(self.changeParameter6)
+        self.ui.lineEdits[7].textChanged.connect(self.changeParameter7)
+
         for i in range(len(self.flags)):
             self.ui.checkBoxes[i].setChecked(self.f[i])
         self.ui.checkBoxes[self.DEBUG_MODE].stateChanged.connect(self.setDebugMode)
