@@ -39,12 +39,13 @@ void serialEvent() {
 			case 0:
 				switch (device)
 				{
-				case 11:
+				case 10:
 					motorK.motors->setSpeedLimit(value1);
 					break;
 				default:
 					break;
 				}
+				break;
 			case 1:
 				switch (device)
 				{

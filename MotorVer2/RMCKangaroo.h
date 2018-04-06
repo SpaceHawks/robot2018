@@ -8,7 +8,6 @@
 #define FRONT_RIGHT 0 //channel 3
 #define REAR_RIGHT 3 //channel 6
 #define WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT 20000
-
 /*!
 \class Actuator
 \brief This parent class ensures Linear Actuator and motor class inherits the general functions.
@@ -95,7 +94,7 @@ public:
 	long targetPos;
 	long getCurrentSpeed();
 	void move(long angle, long speed);
-	void setSpeedLimit(long speed);
+	void setSpeedLimit(long newSpeed);
 	//void moveAtSpeed(long val, long newSpeed);
 	void setTargetVal(long val);
 	void loop();
@@ -118,7 +117,7 @@ public:
 	int mode = 0;
 	Motor *channel[4];
 	Motors(KangarooSerial & K, char name);
-	void setSpeedLimit(int speed);
+	void setSpeedLimit(int newSpeed);
 	void drive(long drive, long turn);
 	//void setTurn(long turn);
 	void tankDrive(long leftSpeed, long rightSpeed);

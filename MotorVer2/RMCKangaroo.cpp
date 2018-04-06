@@ -230,10 +230,10 @@ long Motor::getCurrentSpeed()
 {
 	return status.value();
 }
-void Motor::setSpeedLimit(long speed) //speed is percentage
+void Motor::setSpeedLimit(long newSpeed) //speed is percentage
 {
-	if (speed > 0 && speed <= 100) {
-		speedLimit = map(speed, 0, 100, 0, WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT);
+	if (newSpeed > 0 && newSpeed <= 100) {
+		speedLimit = map(newSpeed, 0, 100, 0, WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT);
 	}
 }
 void Motor::move(long angle, long speed)
@@ -252,9 +252,12 @@ Motors::Motors(KangarooSerial & K, char name)
 	setSpeedLimit(25);
 }
 
-void Motors::setSpeedLimit(int speed) { // speed is percent
-	for (int i = 0; i < 4; i++) {
-		channel[i]->setSpeedLimit(speed);
+void Motors::setSpeedLimit(int newSpeed) { // speed is percent
+	if (newSpeed > 0 && newSpeed <= 100)
+	{
+		for (int i = 0; i < 4; i++) {
+			channel[i]->setSpeedLimit(newSpeed);
+		}
 	}
 }
 
