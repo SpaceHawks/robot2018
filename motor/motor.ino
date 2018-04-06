@@ -56,7 +56,9 @@ void serialEvent() {
 					break;
 				case 6: //channel 1 and 2 together
 					break;
-				case 8:
+				case 7: // Send speed data once
+					break;
+				case 8: // Send continuous data
 					break;
 				case 10:
 					motorK.motors->drive((signed char)value1, (signed char)value2);
