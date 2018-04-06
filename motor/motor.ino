@@ -37,6 +37,15 @@ void serialEvent() {
 			//Serial.println("Passed checksum: " + String(command) + " " + String(device) + " " + String(value1) + " " + String(value2));
 			switch (command)
 			{
+			case 0:
+				switch (device)
+				{
+				case 11:
+					motorK.motors->setSpeedLimit(value1);
+					break;
+				default:
+					break;
+				}
 			case 1:
 				switch (device)
 				{

@@ -1,5 +1,4 @@
 #include "RMCKangaroo.h"
-
 /*!
 Constructor
 */
@@ -231,10 +230,10 @@ long Motor::getCurrentSpeed()
 {
 	return status.value();
 }
-void Motor::setSpeedLimit(long speed)
+void Motor::setSpeedLimit(long speed) //speed is percentage
 {
-	if (speed > 0) {
-		speedLimit = speed;
+	if (speed > 0 && speed <= 100) {
+		speedLimit = map(speed, 0, 100, 0, WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT);
 	}
 }
 void Motor::move(long angle, long speed)
@@ -250,11 +249,15 @@ Motors::Motors(KangarooSerial & K, char name)
 	channel[1] = new Motor(K, name + 1);
 	channel[2] = new Motor(K, name + 2);
 	channel[3] = new Motor(K, name + 3);
-	for (int i = 0;i < 4;i++) {
-		channel[i]->setSpeedLimit(3000);
-	}
-
+	setSpeedLimit(25);
 }
+
+void Motors::setSpeedLimit(int speed) { // speed is percent
+	for (int i = 0; i < 4; i++) {
+		channel[i]->setSpeedLimit(speed);
+	}
+}
+
 void Motors::loop()
 {
 	for (int i = 0; i < 4; i++) {
