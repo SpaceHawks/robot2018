@@ -16,7 +16,18 @@ void serialEvent() {
 	while (Serial1.available() > 4) {
 		char message[5];
 		Serial1.readBytes(message, 5);
-		if (checkSum(message, 5))
+		bool valid = checkSum(message, 5);
+		while (!valid && Serial1.available())
+		{
+			for (int i = 4; i > 0; i--)
+			{
+				message[i] = message[i - 1];
+			}
+			message[0] = Serial1.read();
+			valid = checkSum(message, 5);
+			Serial.println("hieu");
+		}
+		if(valid)
 		{
 			char command = message[0];
 			char device = message[1];
@@ -57,6 +68,9 @@ void serialEvent() {
 					break;
 				}
 			}
+		}
+		else {// com failed, stop all actuators
+			motorK.motors->drive(0, 0); //should be all motors
 		}
 	}
 }
