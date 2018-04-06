@@ -1,5 +1,4 @@
 #include "RMCKangaroo.h"
-#include <Kangaroo.h>
 RMCKangaroo motorK(Serial3);
 void setup() {
 	motorK.begin();
