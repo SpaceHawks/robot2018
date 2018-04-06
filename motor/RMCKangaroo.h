@@ -3,9 +3,9 @@
 #include <PID_v1.h>
 
 #define DEFAULT_NUMBER_OF_CHANNEL 10
+#define FRONT_RIGHT 0 //channel 3
 #define FRONT_LEFT 1  //channel 4
 #define REAR_LEFT 2 //channel 5
-#define FRONT_RIGHT 0 //channel 3
 #define REAR_RIGHT 3 //channel 6
 #define WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT 20000
 
@@ -128,6 +128,7 @@ public:
 	void begin();
 	long getLeftMotorS();
 	long getRightMotorS();
+	long getMotorOne
 	void setPos(long pos);
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;

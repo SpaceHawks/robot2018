@@ -5,10 +5,17 @@
       "intelliSenseMode": "msvc-x64",
       "includePath": [
         "${projectRoot}..\\PID1",
+<<<<<<< HEAD
         "${projectRoot}..\\..\\..\\..\\Documents\\Arduino\\libraries\\Sabertooth",
         "${projectRoot}..\\..\\..\\..\\..\\..\\Program Files (x86)\\Arduino\\libraries",
         "${projectRoot}..\\..\\..\\..\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\sam\\1.6.11\\libraries",
         "${projectRoot}..\\..\\..\\..\\Documents\\Arduino\\libraries",
+=======
+        "D:\\Documents\\Arduino\\libraries\\Sabertooth",
+        "${projectRoot}..\\..\\..\\..\\..\\..\\Program Files (x86)\\Arduino\\libraries",
+        "${projectRoot}..\\..\\..\\..\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\sam\\1.6.11\\libraries",
+        "D:\\Documents\\Arduino\\libraries",
+>>>>>>> e71069591d0a026b81a45c1659d325bb59a3ec33
         "${projectRoot}..\\..\\..\\..\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\sam\\1.6.11\\cores\\arduino",
         "${projectRoot}..\\..\\..\\..\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\sam\\1.6.11\\cores\\arduino\\avr",
         "${projectRoot}..\\..\\..\\..\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\sam\\1.6.11\\cores\\arduino\\USB",
