@@ -7,6 +7,7 @@
 #define REAR_LEFT 2 //channel 5
 #define FRONT_RIGHT 0 //channel 3
 #define REAR_RIGHT 3 //channel 6
+#define WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT 20000
 
 /*!
 \class Actuator
@@ -87,6 +88,7 @@ public:
 	Motor(KangarooSerial& K, char name);
 	bool done = false;
 	long speedLimit;
+	long mechanicalSpeedLimit = WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT;
 	long lastSpeed = 1;
 	long speed = 0;
 	int mode; //0 - speed , 1 - position
@@ -116,6 +118,7 @@ public:
 	int mode = 0;
 	Motor *channel[4];
 	Motors(KangarooSerial & K, char name);
+	void setSpeedLimit(int speed);
 	void drive(long drive, long turn);
 	//void setTurn(long turn);
 	void tankDrive(long leftSpeed, long rightSpeed);
