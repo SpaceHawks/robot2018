@@ -80,6 +80,26 @@ void serialEvent() {
 					Serial.println("unhanddle command: " + String(command) + " " + String(device) + " " + String(value1) + " " + String(value2));
 					break;
 				}
+				break;
+			case 3:
+				switch (device)
+				{
+				case 0:
+					
+					break;
+				case 1:
+
+					break;
+				case 2:
+
+					break;
+				case 4:
+					Serial.println(motorK.motors->getMotorSpeedS());
+					break;
+				default:
+					break;
+				}
+				break;
 			}
 		}
 		else {// com failed, stop all actuators
