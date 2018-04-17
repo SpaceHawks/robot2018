@@ -130,6 +130,12 @@ void LinearActuatorPair::setTargetPos(long pos)
 {
 	targetVal = pos;
 }
+void LinearActuatorPair::setTargetPosAndSpeed(long pos, long speed)
+{
+	setTargetPos(pos);
+	setSpeed(speed);
+}
+
 /*!
 Computes gap between Linear Actuators and fixes it if greater than tolerance.
 Moves Linear Actuator Pair to target value controlled by PID. 
@@ -161,7 +167,6 @@ void LinearActuatorPair::loop()
 		{
 			channel[1]->setSpeed(speed - Output);
 		}
-
 		//Serial.println(gap);
 		if (abs(gap) > 25){
 			if (!isSyncing) {
@@ -190,10 +195,9 @@ Sets speed of Linear Actuator.
 */
 void LinearActuatorPair::begin()
 {
-	
 	channel[0]->begin();
 	channel[1]->begin();
-	setSpeed(94);
+	setSpeed(100);
 }
 Motor::Motor(KangarooSerial& K, char name) :KangarooChannel(K, name)
 {
@@ -201,6 +205,8 @@ Motor::Motor(KangarooSerial& K, char name) :KangarooChannel(K, name)
 void Motor::begin()
 {
 	start();
+	//KangarooError error = start();
+	//Serial.println(error);
 }
 void Motor::setTargetPos(long pos)
 {
@@ -370,6 +376,70 @@ void Motors::setAngle(long angle)
 		alreadySetTargetPos == false;
 	}
 }
+
+Auger::Auger(int enablePin, int reversePin)
+{
+	attach(enablePin, reversePin);
+}
+
+void Auger::changeControlPins(int enablePin, int reversePin)
+{
+	release();
+	attach(enablePin, reversePin);
+}
+
+void Auger::attach(int enablePin, int reversePin)// only accept degital pins 2-13
+{
+	if (enablePin >= 2 && enablePin <= 13 && reversePin >= 2 && reversePin <= 13 && enablePin != reversePin)
+	{
+		this->enablePin = enablePin;
+		this->reversePin = reversePin;
+		pinMode(enablePin, OUTPUT);
+		pinMode(reversePin, OUTPUT);
+	}
+}
+
+void Auger::release()
+{
+	pinMode(enablePin, INPUT);
+	pinMode(reversePin, INPUT);
+}
+
+void Auger::forward()
+{
+	digitalWrite(reversePin, LOW);
+	digitalWrite(enablePin, HIGH);
+}
+
+void Auger::reverse()
+{
+	digitalWrite(reversePin, HIGH);
+	digitalWrite(enablePin, HIGH);
+}
+
+void Auger::setDirection(int enable, int direction)
+{
+	if (enable == 1)
+	{
+		if (direction = 1) //reverse
+		{
+			reverse();
+		}
+		else if (direction = 0) //reverse
+		{
+			forward();
+		}
+	}
+	else if (enable = 0) {
+		stop();
+	}
+}
+
+void Auger::stop()
+{
+	digitalWrite(enablePin, LOW);
+}
+
 /*!
 Constructor. Initilizes Arduino pins connected to the Kangaroo.
 \param potPin the Arduino analog pin number. Default is 0.
@@ -379,7 +449,8 @@ RMCKangaroo::RMCKangaroo(USARTClass &serial)
 	SerialPort = &serial;
 	K = new KangarooSerial(*SerialPort);
 	motors = new Motors(*K, '3');
-	//linearActuatorPair = new LinearActuatorPair(*K, '1');
+	linearActuatorPair = new LinearActuatorPair(*K, '1');
+	auger = new Auger(2, 3);
 }
 /*!
 Executes the loop of the right Linear Actuator
@@ -387,6 +458,7 @@ Executes the loop of the right Linear Actuator
 void RMCKangaroo::loop()
 {
 	motors->loop();
+	linearActuatorPair->loop();
 	//linearActuatorPair->loop();
 }
 /*!
@@ -400,5 +472,6 @@ void RMCKangaroo::begin() {
 //	Serial.print("Error");
 	//SerialPort->listen();
 	motors->begin();
+	linearActuatorPair->begin();
 	//linearActuatorPair->begin();
 }

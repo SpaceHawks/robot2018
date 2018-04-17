@@ -70,6 +70,7 @@ public:
 	//void setTargetVal(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
 	void setTargetPos(long pos);
+	void setTargetPosAndSpeed(long pos, long speed);
 	void loop();
 	void begin();
 	long speed;
@@ -136,6 +137,19 @@ public:
 	PID* syncPID;
 };
 
+class Auger {
+public:
+	Auger(int enablePin, int reversePin);
+	int enablePin;
+	int reversePin;
+	void changeControlPins(int enablePin, int reversePin);
+	void attach(int enablePin, int reversePin);
+	void release();
+	void forward();
+	void reverse();
+	void setDirection(int enable, int direction);
+	void stop();
+};
 /*!
 \class RMCKangaroo1
 \brief  This the main class for Kangaroo X2 Motion Controller
@@ -145,7 +159,6 @@ class RMCKangaroo
 protected:
 	int channelIndex[DEFAULT_NUMBER_OF_CHANNEL];
 	Motors* channel[DEFAULT_NUMBER_OF_CHANNEL];
-	
 	USARTClass* SerialPort;
 	KangarooSerial* K;
 	String channelList;
@@ -154,6 +167,7 @@ protected:
 public:
 	Motors* motors;
 	LinearActuatorPair* linearActuatorPair;
+	Auger* auger;
 	RMCKangaroo(USARTClass &serialPorta);
 	void loop();
 	void begin();

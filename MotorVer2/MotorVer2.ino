@@ -1,9 +1,9 @@
 #include "RMCKangaroo.h"
 RMCKangaroo motorK(Serial3);
 void setup() {
-	motorK.begin();
 	Serial1.begin(115200);
 	Serial.begin(115200);
+	motorK.begin();
 	Serial.println("Motor control started!");
 }
 
@@ -61,11 +61,14 @@ void serialEvent() {
 					break;
 				case 4:
 					break;
-				case 5:
+				case 5://linear actuator pair
+					motorK.linearActuatorPair->setTargetPosAndSpeed(value1, value2);
 					break;
-				case 6: //channel 1 and 2 together
+				case 6://linear actuator pair
+					motorK.linearActuatorPair->setTargetPosAndSpeed(value1, value2);
 					break;
-				case 8:
+				case 8:// auger on/off reverse/forward
+					motorK.auger->setDirection(value1, value2);
 					break;
 				case 10:
 					motorK.motors->drive((signed char)value1, (signed char)value2);
