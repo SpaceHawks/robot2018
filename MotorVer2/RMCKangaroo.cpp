@@ -322,6 +322,36 @@ long Motors::getRightMotorS()
 	return map(-channel[FRONT_RIGHT]->status.value(), -(channel[FRONT_RIGHT]->speedLimit), channel[FRONT_RIGHT]->speedLimit, -100, 100);
 }
 
+long Motors::getFrRightMotorS()
+{
+	return map(-channel[FRONT_RIGHT]->status.value(), -(channel[FRONT_RIGHT]->speedLimit), channel[FRONT_RIGHT]->speedLimit, -100, 100);
+}
+
+long Motors::getFrLeftMotorS()
+{
+	return map(-channel[FRONT_LEFT]->status.value(), -(channel[FRONT_LEFT]->speedLimit), channel[FRONT_LEFT]->speedLimit, -100, 100);
+}
+
+long Motors::getReLeftMotorS()
+{
+	return map(-channel[REAR_LEFT]->status.value(), -(channel[REAR_LEFT]->speedLimit), channel[REAR_LEFT]->speedLimit, -100, 100);
+}
+
+long Motors::getReRightMotorS()
+{
+	return map(-channel[REAR_RIGHT]->status.value(), -(channel[REAR_RIGHT]->speedLimit), channel[REAR_RIGHT]->speedLimit, -100, 100);
+}
+
+long *Motors::getMotorSpeedS()
+{
+	static long speedList[4];
+	speedList[0] = getFrRightMotorS();
+	speedList[1] = getFrLeftMotorS();
+	speedList[2] = getReLeftMotorS();
+	speedList[3] = getReRightMotorS();
+	return speedList;
+}
+
 void Motors::drive(long drive, long turn)
 {
 	if (drive >= -100 && drive <= 100 && turn >= -100 && turn <= 100) {
