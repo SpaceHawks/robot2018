@@ -43,12 +43,12 @@ class Arduino():
     def stop(self):
         self.drive(0, 0, forced=True)
 
-    def turn(self, direction):
+    def turn(self, direction, forced=False, usingTail=False):
         speed = abs(direction)
         if direction > 0:
-            self.right(speed)
+            self.right(speed, forced, usingTail)
         else:
-            self.left(speed)
+            self.left(speed, forced, usingTail)
 
     def left(self, speed, forced=False, usingTail=False):
         self.drive(speed, -100, forced=forced, usingTail=usingTail)

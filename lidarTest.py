@@ -61,8 +61,18 @@ tilterSpeedParam = None
 zeroAngleParam = None
 maxAngleParam = None
 zeroDistanceParam = None
+maxTurnParam = None
+maxDriveParam = None
+arduinoSpeedLimitParam = None
 exceedAngleLimit = None
 #PID tunings
+
+wheelsParam = None
+tilterParam = None
+sliderParam = None
+augerParam = None
+
+
 
 #xbox 360
 def initXbox360():
@@ -188,12 +198,13 @@ def stopSafeDistance():
         ui.statusBar.setStyleSheet('color: orange')
 #lidar gui
 def initLidarGui():
-    global app, ui, mw, haha, tilterPosParam, tilterSpeedParam, zeroAngleParam, maxAngleParam, zeroDistanceParam
+    global app, ui, mw, haha, tilterPosParam, tilterSpeedParam, zeroAngleParam, maxAngleParam, zeroDistanceParam, maxTurnParam, maxDriveParam, arduinoSpeedLimitParam, wheelsParam, tilterParam, sliderParam, augerParam
     ui = LidarGUI()
     ui.params.param('Commands', 'XBox Controller On').sigActivated.connect(initXbox360)
     ui.params.param('Commands', 'XBox Controller Off').sigActivated.connect(destroyXbox360)
     ui.params.param('Commands', 'Emergency Stop').sigActivated.connect(emergencyStop)
-    ui.params.param('Arduino Settings', 'Speed Limit').sigValueChanged.connect(lambda param: arduino.setSpeedLimit(param.value()))
+    arduinoSpeedLimitParam = ui.params.param('Arduino Settings', 'Speed Limit')
+    arduinoSpeedLimitParam.sigValueChanged.connect(lambda param: arduino.setSpeedLimit(param.value()))
     ui.setWindowTitle("RMC LIDAR Testing Sofware")
     ui.eStopPressed.connect(emergencyStop)
     #PID param
@@ -210,6 +221,8 @@ def initLidarGui():
     ui.params.param('Distance PID', 'Sample Time').sigValueChanged.connect(
         lambda param: goToPID.setSampleTime(param.value()))
     zeroDistanceParam = ui.params.param('Distance PID', 'Zero Distance')
+    maxTurnParam = ui.params.param('Distance PID', 'Max Turn')
+    maxDriveParam = ui.params.param('Distance PID', 'Max Drive')
 
     ui.params.param('Self-Alignment PID', 'Kp').sigValueChanged.connect(lambda param: (PIDs[0].setKp(param.value()), (PIDs[1].setKp(param.value()))))
     ui.params.param('Self-Alignment PID', 'Ki').sigValueChanged.connect(lambda param: (PIDs[0].setKi(param.value()), (PIDs[1].setKi(param.value()))))
@@ -234,6 +247,21 @@ def initLidarGui():
     ui.params.param('Mining Controls', 'Reverse').sigActivated.connect(arduino.augerReverse)
     ui.params.param('Mining Controls', 'Stop').sigActivated.connect(arduino.augerStop)
 
+    wheelsParam = ui.params.param('Arduino Settings', 'Wheel Speed')
+    tilterParam = ui.params.param('Arduino Settings', 'Tilter Position')
+    sliderParam = ui.params.param('Arduino Settings', 'Slider Position')
+    augerParam = ui.params.param('Arduino Settings', 'Auger')
+
+    wheelsParam.setValue([1, 2, 3, 4])
+    tilterParam.setValue([50,60])
+    sliderParam.setValue(80)
+
+    augerParam.sigForwardClicked.connect(lambda: print("forward"))
+    augerParam.sigBackwardClicked.connect(lambda: print("backward"))
+    augerParam.sigStopClicked.connect(lambda: print("Auger stop"))
+
+    tilterParam.sigChanged.connect(lambda value: print(value))
+    sliderParam.sigChanged.connect(lambda value: print(value))
 
     ui.showMaximized()
     ui.show()
@@ -309,8 +337,10 @@ def goTo():
             coordinateItem = ui.arenaWidget.pathPointItems.queue[0]
             coordinateItem.setBrush(pg.mkBrush('g'))
             currentTarget = (coordinate.x(), coordinate.y())
+            arduinoSpeedLimitParam.setValue(100)
         else:
             goToTimer.stop()
+            arduinoSpeedLimitParam.setValue(20)
     elif lidar.newPos:
         remainDistance, angleDiff, usingTail = lidar.getDriveParams(currentTarget)
         ui.arenaWidget.labelRemainingDistance.setText("Remaining Distance: "+str(int(remainDistance)) + " mm")
@@ -325,18 +355,18 @@ def goTo():
         else: #not arrived yet
             goToPID.update(remainDistance)
             orientatinPID.update(angleDiff)
-            drive = goToPID.output
-            turn = orientatinPID.output
-            if drive > speedLimit: drive = speedLimit
-            if drive < -speedLimit: drive = -speedLimit
-            if turn > 0: turn = 100
-            if turn < 0: turn = -100
+            drive = -goToPID.output
+            turn = -orientatinPID.output
+            if drive > maxDriveParam.value(): drive = maxDriveParam.value()
+            if drive < -maxDriveParam.value(): drive = -maxDriveParam.value()
+            if turn > maxTurnParam.value(): turn = maxTurnParam.value()
+            if turn < -maxTurnParam.value(): turn = -maxTurnParam.value()
             if abs(angleDiff) > maxAngleParam.value():
                 exceedAngleLimit = True
-                arduino.turn(turn)
+                arduino.turn(int(turn))
             elif abs(angleDiff) > zeroAngleParam.value():
                 if exceedAngleLimit:
-                    arduino.turn(turn)
+                    arduino.turn(int(turn))
                 else:
                     arduino.drive(int(drive), int(turn), forced=False, usingTail=usingTail)
             else: #angle diff is zero
@@ -378,7 +408,6 @@ def emergencyStop():
     correctOrientationTimer.stop()
     destroyXbox360()
     distanceSensorsTimer.stop()
-    lidarTimer.stop()
     arduino.stop()
     ui.statusBar.setText("E-Stop pressed.")
     ui.statusBar.setStyleSheet('color: green')

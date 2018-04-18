@@ -15,6 +15,7 @@ import numpy as np
 from rplidar import RPLidar
 from queue import Queue
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+from RMCParameter import *
 # from hokuyolx import HokuyoLX
 
 
@@ -71,6 +72,8 @@ def is_number(s):
         return n
     except ValueError:
         return False
+
+
 
 class Robot(pg.GraphicsObject):
     def __init__(self, parent = None):
@@ -387,6 +390,10 @@ class LidarGUI(QtGui.QWidget):
             dict(name='Arduino Settings', type='group', children=[
                 dict(name='Reset', type='action'),
                 dict(name='Speed Limit', type='int', value=25, dec=False, step=5, limits=[5, 100]),
+                dict(name='Wheel Speed', type='wheels'),
+                dict(name='Tilter Position', type='tilter'),
+                dict(name='Slider Position', type='slider'),
+                dict(name='Auger', type='auger'),
             ]),
             dict(name='Mining Controls', type='group', children=[
                 dict(name='Forward', type='action'),
@@ -426,11 +433,13 @@ class LidarGUI(QtGui.QWidget):
             ]),
             dict(name='Distance PID', type='group', children=[
                 dict(name='Zero Distance', type='int', value=100, dec=False, step=100, limits=[1, 5000]),
+                dict(name='Max Drive', type='int', value=10, dec=False, step=5, limits=[1, 100]),
+                dict(name='Max Turn', type='int', value=10, dec=False, step=5, limits=[1, 100]),
                 dict(name='Stop', type='action'),
-                dict(name='Kp', type='float', value=0.2, dec=False, step=0.01, limits=[0, None]),
-                dict(name='Ki', type='float', value=0.15, dec=False, step=0.01, limits=[0, None]),
-                dict(name='Kd', type='float', value=0.03, dec=False, step=0.01, limits=[0, None]),
-                dict(name='Sample Time', type='float', value=200, dec=False, step=100, limits=[1, None]),
+                dict(name='Kp', type='float', value=0.01, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Ki', type='float', value=0, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Kd', type='float', value=0, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Sample Time', type='float', value=100, dec=False, step=100, limits=[1, None]),
             ]),
             dict(name='Orientation PID', type='group', children=[
                 dict(name='Zero Angle', type='int', value=2, dec=False, step=1, limits=[-180, 180]),
@@ -439,7 +448,7 @@ class LidarGUI(QtGui.QWidget):
                 dict(name='Kp', type='float', value=0.2, dec=False, step=0.01, limits=[0, None]),
                 dict(name='Ki', type='float', value=0.15, dec=False, step=0.01, limits=[0, None]),
                 dict(name='Kd', type='float', value=0.03, dec=False, step=0.01, limits=[0, None]),
-                dict(name='Sample Time', type='float', value=200, dec=False, step=100, limits=[1, None]),
+                dict(name='Sample Time', type='float', value=100, dec=False, step=100, limits=[1, None]),
             ]),
             dict(name='Self-Alignment PID', type='group', children=[
                 dict(name='Start', type='action'),
@@ -455,7 +464,7 @@ class LidarGUI(QtGui.QWidget):
                 dict(name='xboxTimer', type='int', value=1, dec=False, step=10, limits=[1, 5000]),
                 dict(name='distanceSensorsTimer', type='int', value=20, dec=False, step=10, limits=[1, 5000]),
                 dict(name='lidarTimer', type='int', value=10, dec=False, step=10, limits=[1, 5000]),
-                dict(name='goToTimer', type='int', value=10, dec=False, step=10, limits=[1, 5000]),
+                dict(name='goToTimer', type='int', value=50, dec=False, step=10, limits=[1, 5000]),
                 dict(name='correctOrientationTimer', type='int', value=200, dec=False, step=10, limits=[1, 5000]),
         ]),
             #
@@ -557,36 +566,6 @@ class LidarGUI(QtGui.QWidget):
         self.statusBar.setStyleSheet('color: yellow')
 
 class Localizer(QtCore.QObject):
-    # paras = ["ANGLE_GAP",
-    #        "DIFF_GAP",
-    #        "AVE_ANGLE_GAP",
-    #        "AVE_GAP_DX_DY",
-    #        "AVE_DIST_GAP",
-    #        "MARKER_LENGTH_MIN",
-    #        "MARKER_LENGTH_MAX",
-    #        "MARKER_QUALITY_MAX",
-    #         "ISO_QUALITY_LENGTH"]
-    # ANGLE_GAP = 0
-    # DIFF_GAP = 1
-    # AVE_ANGLE_GAP = 2
-    # AVE_GAP_DX_DY = 3
-    # AVE_DIST_GAP = 4
-    # MARKER_LENGTH_MIN = 5
-    # MARKER_LENGTH_MAX = 6
-    # MARKER_QUALITY_MAX = 7
-    # ISO_QUALITY_LENGTH = 8
-    # flags = [
-    #        "DEBUG_MODE",
-    #         "SHOW_RAW_DATA",
-    #         "SHOW_ROBOT_POS",
-    #        "PRINT_RAW_DATA",
-    #        "IS_ACTIVE"
-    #         ]
-    # DEBUG_MODE = 0
-    # SHOW_RAW_DATA = 1
-    # SHOW_ROBOT_POS = 2
-    # PRINT_RAW_DATA = 3
-    # IS_ACTIVE = 4
 
     lidarFailed = QtCore.pyqtSignal()
     lidarStopped = QtCore.pyqtSignal()
@@ -614,17 +593,24 @@ class Localizer(QtCore.QObject):
     def _update(self):
         if self.scan is not None:
             # make polar data
-            scanLength = len(self.scan[1])
-            quality = self.scan[2]
-            angle = np.degrees(self.scan[0])+180
-            distance = self.scan[1]
-            rad = np.degrees(self.scan[0])+180
 
             scanLength = len(self.scan[0])
             quality = np.array(self.scan[0])
             angle = np.array(self.scan[1])
             distance = np.array(self.scan[2])
             rad = np.deg2rad(angle)
+
+            x = distance * np.cos(rad)
+            y = distance * np.sin(rad)
+            dq = np.diff(quality)
+            dq = np.append(dq, quality[0] - quality[-1])
+            dy = np.diff(y)
+            dy = np.append(dy, y[0] - y[-1])
+            dx = np.diff(x)
+            dx = np.append(dx, x[0] - x[-1])
+            dd = np.sqrt(dy * dy + dx * dx)
+            dydx = dy / dx
+            dydxAngle = np.arctan2(dy, dx)
 
             # angle gap
             angleFilter = np.zeros(scanLength)
