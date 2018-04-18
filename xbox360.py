@@ -1,50 +1,50 @@
 import pygame, platform
-#from PyQt5.QtCore import QObject, pyqtSignal, QCoreApplication
-from PyQt4.QtCore import QObject, pyqtSignal
+#from PyQt5.QtCore import QObject, QtCore.pyqtSignal, QCoreApplication
+from pyqtgraph.Qt import QtCore
 import os
 
 positioning = False
 stillAlive = False
 
-class Xbox360(QObject):
+class Xbox360(QtCore.QObject):
     #button pressed
-    APressed = pyqtSignal()
-    BPressed = pyqtSignal()
-    XPressed = pyqtSignal()
-    YPressed = pyqtSignal()
-    backPressed = pyqtSignal()
-    startPressed = pyqtSignal()
-    leftBumperPressed = pyqtSignal()
-    rightBumperPressed = pyqtSignal()
-    leftJoyButtonPressed = pyqtSignal()
-    rightJoyButtonPressed = pyqtSignal()
+    APressed = QtCore.pyqtSignal()
+    BPressed = QtCore.pyqtSignal()
+    XPressed = QtCore.pyqtSignal()
+    YPressed = QtCore.pyqtSignal()
+    backPressed = QtCore.pyqtSignal()
+    startPressed = QtCore.pyqtSignal()
+    leftBumperPressed = QtCore.pyqtSignal()
+    rightBumperPressed = QtCore.pyqtSignal()
+    leftJoyButtonPressed = QtCore.pyqtSignal()
+    rightJoyButtonPressed = QtCore.pyqtSignal()
 
     #button released
-    AReleased = pyqtSignal()
-    BReleased = pyqtSignal()
-    XReleased = pyqtSignal()
-    YReleased = pyqtSignal()
-    backReleased = pyqtSignal()
-    startReleased = pyqtSignal()
-    leftBumperReleased = pyqtSignal()
-    rightBumperReleased = pyqtSignal()
-    leftJoyButtonReleased = pyqtSignal()
-    rightJoyButtonReleased = pyqtSignal()
+    AReleased = QtCore.pyqtSignal()
+    BReleased = QtCore.pyqtSignal()
+    XReleased = QtCore.pyqtSignal()
+    YReleased = QtCore.pyqtSignal()
+    backReleased = QtCore.pyqtSignal()
+    startReleased = QtCore.pyqtSignal()
+    leftBumperReleased = QtCore.pyqtSignal()
+    rightBumperReleased = QtCore.pyqtSignal()
+    leftJoyButtonReleased = QtCore.pyqtSignal()
+    rightJoyButtonReleased = QtCore.pyqtSignal()
 
     #motion button pressed
-    motionUp = pyqtSignal()
-    motionDown = pyqtSignal()
-    motionLeft = pyqtSignal()
-    motionRight = pyqtSignal()
-    motionCenter = pyqtSignal() #no motion button is pressed
+    motionUp = QtCore.pyqtSignal()
+    motionDown = QtCore.pyqtSignal()
+    motionLeft = QtCore.pyqtSignal()
+    motionRight = QtCore.pyqtSignal()
+    motionCenter = QtCore.pyqtSignal() #no motion button is pressed
 
     #Joystick movement
-    leftJoystickHorizontalMove = pyqtSignal(int)
-    leftJoystickVerticalMove = pyqtSignal(int)
-    rightJoystickHorizontalMove = pyqtSignal(int)
-    rightJoystickVerticalMove = pyqtSignal(int)
-    leftTriggerMove = pyqtSignal(int)
-    rightTriggerMove = pyqtSignal(int)
+    leftJoystickHorizontalMove = QtCore.pyqtSignal(int)
+    leftJoystickVerticalMove = QtCore.pyqtSignal(int)
+    rightJoystickHorizontalMove = QtCore.pyqtSignal(int)
+    rightJoystickVerticalMove = QtCore.pyqtSignal(int)
+    leftTriggerMove = QtCore.pyqtSignal(int)
+    rightTriggerMove = QtCore.pyqtSignal(int)
     # Mac
     # LTHUMBX = 0
     # LTHUMBY = 1
@@ -166,7 +166,6 @@ class Xbox360(QObject):
         for event in pygame.event.get():
             if event.type == pygame.JOYAXISMOTION:
                 if event.axis == self.LEFT_STICK_X:
-                    print(self.LEFT_STICK_X)
                     self.updateTurn(int(100 * event.value))
 
                 elif event.axis == self.LEFT_STICK_Y:

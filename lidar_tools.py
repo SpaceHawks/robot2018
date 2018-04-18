@@ -14,6 +14,9 @@ import pyqtgraph as pg
 import numpy as np
 from rplidar import RPLidar
 from queue import Queue
+from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+# from hokuyolx import HokuyoLX
+
 
 
 def markerDirection(firstPoint, lastPoint):
@@ -29,6 +32,17 @@ def distanceFromMidMarkerToOrigin(firstPoint, lastPoint):
     midX = (firstPoint[0] + lastPoint[0])/2
     midY = (firstPoint[1] + lastPoint[1])/2
     return np.sqrt(midX*midX+midY*midY)
+
+def distanceBetween(point1, point2):
+    dx = point1[0] - point2[0]
+    dy = point1[1] - point2[1]
+    return np.sqrt(dx*dx+dy*dy)
+
+def xy(distance, angle):
+    return (distance*np.cos(np.radians(angle)), distance*np.sin(np.radians(angle)))
+
+def orientation(tail, head):
+    return np.degrees(np.arctan2(head[1] - tail[1], head[0] - tail[0]))
 
 def standardizeAngle(angle): #only degrees
     angle %= 360
@@ -63,11 +77,16 @@ class Robot(pg.GraphicsObject):
         pg.GraphicsObject.__init__(self, parent)
         self.length = 1000
         self.width = 500
-        self.penWidth = 50;
-        self.line = QtCore.QLineF(0, 0, self.length/2, 0)
+        self.penWidth = 4
+        self.line = QtCore.QLineF(0, 0, self.length, 0)
         self.target = None
         self.origin = QtCore.QPointF(0,0)
         self.pen = pg.mkPen(0)
+        self.brush = pg.mkBrush(0)
+        self.pen.setWidth(self.penWidth)
+        self.centerRadius = 100
+        self.centerCircleBound = QtCore.QRectF(-self.centerRadius, -self.centerRadius, self.centerRadius*2, self.centerRadius*2)
+
 
     def boundingRect(self):
         return QtCore.QRectF(-self.length/2 - self.penWidth / 2, -self.width/2 - self.penWidth / 2,
@@ -75,10 +94,11 @@ class Robot(pg.GraphicsObject):
 
     def paint(self, painter, option, widget):
         painter.setPen(self.pen)
+        # painter.setBrush(self.brush)
         painter.drawRect(self.boundingRect());
         painter.drawLine(self.line)
-        arcBound = QtCore.QRectF(-3000, -3000, 6000, 6000)
-        painter.drawArc(arcBound, 45 * 16,270 * 16)
+        painter.drawEllipse(self.centerCircleBound)
+        # painter.drawArc(arcBound, 45 * 16,270 * 16)
 
     def blind(self, isBlind):
         if isBlind:
@@ -123,198 +143,457 @@ class Arena(pg.GraphicsObject):
         dumpObsLine = QtCore.QLineF(self.dumpLength + self.obsFieldLength, self.arenaWidth/2, self.dumpLength +self.obsFieldLength, -self.arenaWidth/2)
         painter.drawLine(dumpObsLine)
 
-class LidarGUI(QtCore.QObject):
-    #
-    # ﻿#cross hair
-    # vLine = pg.InfiniteLine(angle=90, movable=False)
-    # hLine = pg.InfiniteLine(angle=0, movable=False)
-    # p1.addItem(vLine, ignoreBounds=True)
-    # p1.addItem(hLine, ignoreBounds=True)
-    #
-    #
-    # vb = p1.vb
-    #
-    # def mouseMoved(evt):
-    #     pos = evt[0]  ## using signal proxy turns original arguments into a tuple
-    #     if p1.sceneBoundingRect().contains(pos):
-    #         mousePoint = vb.mapSceneToView(pos)
-    #         index = int(mousePoint.x())
-    #         if index > 0 and index < len(data1):
-    #             label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (mousePoint.x(), data1[index], data2[index]))
-    #         vLine.setPos(mousePoint.x())
-    #         hLine.setPos(mousePoint.y())
-
-    # Scatter Plot example for clicked event
-    # Text Item for text
-    lidarFailed = QtCore.pyqtSignal()
-    pathCleared = QtCore.pyqtSignal()
-    pathAdded = QtCore.pyqtSignal()
+class QualityPlotWidget(pg.GraphicsLayoutWidget):
     def __init__(self):
-        super(LidarGUI, self).__init__()
-        self.plots = []
-        self.curves = []
-        self.lineEdits = [None]*8
-        self.labels = [None]*8
-        self.checkBoxes = [None]*5
-        self.labelStatus = None
-        self.labelSystemStatus = None
-        self.path = Queue()
-        self.pathItem = Queue()
+        pg.GraphicsLayoutWidget.__init__(self)
+        self.polarPlot = self.addPlot()
+        self.polarCurve = pg.ScatterPlotItem(size=5, pen=pg.mkPen(None))
+        self.polarPlot.addItem(self.polarCurve)
 
+        self.qualityPlot = self.addPlot()
+        self.qualityCurve = pg.ScatterPlotItem(size=5, pen=pg.mkPen(None))
+        self.qualityPlot.addItem(self.qualityCurve)
 
-    def setupUI(self, view):
-        self.labelStatus = QtGui.QLabel("Status Status Status Status", view)
-        self.labelSystemStatus = QtGui.QLabel("labelSystemStatus", view)
-        self.labelStatus.setStyleSheet("QLabel {color : green; }");
-        self.labelSystemStatus.setStyleSheet("QLabel {color : green; }");
-        self.labelStatus.move(500, 100)
-        self.labelSystemStatus.move(200,100)
-
-        self.buttonConnectDisconnect = QtGui.QPushButton("Connect", view)
-        self.buttonPauseResume = QtGui.QPushButton("Pause", view)
-        down = 500
-        #init line edits
-        for i in range(len(self.lineEdits)):
-            self.lineEdits[i] = QtGui.QLineEdit("", view)
-            self.labels[i] = QtGui.QLabel("Change me!", view)
-            self.labels[i].move(70, i*25 + down)
-            self.labels[i].setStyleSheet("QLabel {color : green; }");
-            self.lineEdits[i].move(220, i*25 + down)
-        #init checkboxes
-        for i in range(len(self.checkBoxes)):
-            self.checkBoxes[i] = QtGui.QCheckBox(view)
-            self.checkBoxes[i].setText("Radio 1")
-            self.checkBoxes[i].move(475, i*25 + down)
-            self.checkBoxes[i].setStyleSheet("QCheckBox {color : green; }");
-
-            # gridLayout.addWidget(radio1, 1, 2, 1, 1)
-
-        self.buttonPauseResume.move(350, down)
-        self.buttonConnectDisconnect.move(350, down + 25)
-        #init brush combobox
-        self.comboBox = pg.ComboBox(view)
-        self.comboBox.addItem("brushesMarkerLengthFilter")
-        self.comboBox.addItem("brushesAveFilter")
-        self.comboBox.move(70, 175 + down)
-
-        for _ in range(3):
-            self.addPlot(view)
-
-        self.plots[0].setAspectLocked()
-        self.plots[0].addLine(x=0, pen=0.2)
-        self.plots[0].addLine(y=0, pen=0.2)
-        for r in range(1000, 10001, 1000):
+        self.polarPlot.setAspectLocked()
+        self.polarPlot.addLine(x=0, pen=0.2)
+        self.polarPlot.addLine(y=0, pen=0.2)
+        for r in range(1000, 6001, 1000):
             circle = pg.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
             circle.setPen(pg.mkPen(0.2))
-            self.plots[0].addItem(circle)
+            self.polarPlot.addItem(circle)
+            mark = pg.TextItem(anchor=(0, 0))
+            mark.setText(str(r) + " mm")
+            self.polarPlot.addItem(mark)
+            mark.setPos(0, r)
+        for angle in range(0, 360, 30):
+            p1 = QtCore.QPointF(0,0)
+            p2 = xy(6000, angle)
+            p2 = QtCore.QPointF(p2[0], p2[1])
+            line = QtGui.QGraphicsLineItem(QtCore.QLineF(p1, p2))
+            line.setPen(pg.mkPen(pg.mkPen(0.2)))
+            self.polarPlot.addItem(line)
+            mark = pg.TextItem(anchor=(0,0))
+            mark.setText(str(angle))
+            self.polarPlot.addItem(mark)
+            mark.setPos(p2.x(), p2.y())
+
+        self.qualityPlot.setXRange(0, 360, padding=0)
+        self.qualityPlot.setYRange(0, 50, padding=0)
+
+        # self.splitter = QtGui.QSplitter()
+        # self.splitter.setOrientation(QtCore.Qt.Vertical)
+        # self.layout.addWidget(self.splitter)
+
+    def setBrush(self, brush):
+        self.polarCurve.setBrush(brush)
+        self.qualityCurve.setBrush(brush)
+
+class ArenaWidget(pg.GraphicsLayoutWidget):
+    pathCleared = QtCore.pyqtSignal()
+    pathAdded = QtCore.pyqtSignal()
+    keyPressed = QtCore.pyqtSignal(QtGui.QKeyEvent)
+    keyReleased = QtCore.pyqtSignal(QtGui.QKeyEvent)
+
+    def __init__(self):
+        pg.GraphicsLayoutWidget.__init__(self)
+        self.path = Queue()
+        self.pathPointItems = Queue()
+        self.pathLinkItems = Queue()
+        self.plot = self.addPlot()
         self.robot = Robot()
         self.arena = Arena()
-        self.plots[1].addItem(self.robot)
-        self.plots[1].addItem(self.arena)
-        self.plots[1].setAspectLocked()
+        self.plot.addItem(self.robot)
+        self.plot.addItem(self.arena)
+        self.plot.setAspectLocked()
         self.robot.setPos(200,300)
         self.robot.setRotation(30)
+        self.scene().sigMouseClicked.connect(self.onClick)
+        self.pointRadius = 50
 
-        self.plots[2].setXRange(0, 360, padding=0)
-        self.plots[2].setYRange(0, 50, padding=0)
-        view.scene().sigMouseClicked.connect(self.onClick)
-        self.view = view
+        self.labelRemainingDistance = pg.TextItem(anchor=(0, 0))
+        self.labelRemainingDistance.setText("Remaining Distance: ")
+        self.labelRemainingDistance.setPos(3500, 200)
 
-    def onClick(self, event):
-        items = self.view.scene().items(event.scenePos())
-        for item in items:
-            if isinstance(item, pg.PlotItem) and item == self.plots[1]:
-                if event.modifiers() == pg.QtCore.Qt.ShiftModifier:
-                    coordinate = self.plots[1].vb.mapSceneToView(event.scenePos())
-                    self.path.put(coordinate)
-                    r = 50
-                    circle = pg.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
-                    circle.setPen(pg.mkPen('r'))
-                    circle.setBrush(pg.mkBrush('r'))
-                    self.plots[1].addItem(circle)
-                    circle.setPos(coordinate.x(), coordinate.y())
-                    self.pathItem.put(circle)
-                    self.pathAdded.emit()
-                if event.modifiers() == pg.QtCore.Qt.AltModifier:
-                    print("alt")
-                    while not self.path.empty():
-                        self.path.get()
-                        self.path.task_done()
-                    while not self.pathItem.empty():
-                        item = self.pathItem.get()
-                        self.plots[1].removeItem(item)
-                        self.pathItem.task_done()
-                    self.pathCleared.emit()
+        self.labelAngleError = pg.TextItem(anchor=(0, 0))
+        self.labelAngleError.setText("Angle Error: ")
+        self.labelAngleError.setPos(3500, 0)
+
+        self.labelStatus = pg.TextItem(anchor=(0, 0))
+        self.labelStatus.setText("Status: ")
+        self.labelStatus.setPos(3500, -200)
+
+        self.plot.addItem(self.labelRemainingDistance)
+        self.plot.addItem(self.labelAngleError)
+        self.plot.addItem(self.labelStatus)
+
     def arrive(self):
         self.path.get()
         self.path.task_done()
-        item = self.pathItem.get()
-        self.plots[1].removeItem(item)
-        self.pathItem.task_done()
+        if self.pathLinkItems.qsize() > 0:
+            item = self.pathLinkItems.get()
+            self.pathLinkItems.task_done()
+            self.plot.removeItem(item)
+        item = self.pathPointItems.get()
+        self.pathPointItems.task_done()
+        self.plot.removeItem(item)
 
-    def addPlot(self, view):
-        self.plots.append(view.addPlot())
-        self.curves.append(pg.ScatterPlotItem(size=5, pen=pg.mkPen(None)))
-        self.plots[-1].addItem(self.curves[-1])
+    def onClick(self, event):
+        items = self.scene().items(event.scenePos())
+        for item in items:
+            if isinstance(item, pg.PlotItem) and item == self.plot:
+                if event.modifiers() == pg.QtCore.Qt.ShiftModifier:
+                    coordinate = self.plot.vb.mapSceneToView(event.scenePos())
+                    self.path.put(coordinate)
+                    circle = pg.QtGui.QGraphicsEllipseItem(-self.pointRadius, -self.pointRadius, self.pointRadius * 2, self.pointRadius * 2)
+                    circle.setPen(pg.mkPen('y'))
+                    circle.setBrush(pg.mkBrush('y'))
+                    if self.pathPointItems.qsize() > 0:
+                        link = QtGui.QGraphicsLineItem(QtCore.QLineF(coordinate, self.pathPointItems.queue[-1].pos()))
+                        link.setPen(pg.mkPen('y'))
+                        self.plot.addItem(link)
+                        self.pathLinkItems.put(link)
+                    self.plot.addItem(circle)
+                    circle.setPos(coordinate.x(), coordinate.y())
+                    self.pathPointItems.put(circle)
+                    self.pathAdded.emit()
+                if event.modifiers() == pg.QtCore.Qt.ControlModifier:
+                    self.clearPath()
+
+    def clearPath(self):
+        while not self.path.empty():
+            self.arrive()
+        self.pathCleared.emit()
+
+    def keyPressEvent(self, event):
+        super(ArenaWidget, self).keyPressEvent(event)
+        self.keyPressed.emit(event)
+
+    def keyReleaseEvent(self, event):
+        super(ArenaWidget, self).keyReleaseEvent(event)
+        self.keyReleased.emit(event)
+#
+# class AugerControlWidget(pg.Qt.QtWidgets.QWidget):
+#     pathCleared = QtCore.pyqtSignal()
+#     pathAdded = QtCore.pyqtSignal()
+#     keyPressed = QtCore.pyqtSignal(QtGui.QKeyEvent)
+#     keyReleased = QtCore.pyqtSignal(QtGui.QKeyEvent)
+#
+#     def __init__(self):
+#         pg.Qt.QtWidgets.QWidget.__init__(self)
+#         self.statusBar1 = QtGui.QLabel("Status "*20)
+#         self.statusBar1.setStyleSheet("QLabel {color : green; }")
+#         # self.splitterDrillControl.addWidget(self.statusBar1)
+#         # self.add(self.statusBar1)
+#         # self.path = Queue()
+#         # self.pathPointItems = Queue()
+#         # self.pathLinkItems = Queue()
+#         # self.plot = self.addPlot()
+#         # self.robot = Robot()
+#         # self.arena = Arena()
+#         # self.plot.addItem(self.robot)
+#         # self.plot.addItem(self.arena)
+#         # self.plot.setAspectLocked()
+#         # self.robot.setPos(200,300)
+#         # self.robot.setRotation(30)
+#         # self.scene().sigMouseClicked.connect(self.onClick)
+#         # self.pointRadius = 50
+#         #
+#         # self.labelRemainingDistance = pg.TextItem(anchor=(0, 0))
+#         # self.labelRemainingDistance.setText("Remaining Distance: ")
+#         # self.labelRemainingDistance.setPos(3500, 200)
+#         #
+#         # self.labelAngleError = pg.TextItem(anchor=(0, 0))
+#         # self.labelAngleError.setText("Angle Error: ")
+#         # self.labelAngleError.setPos(3500, 0)
+#         #
+#         # self.labelStatus = pg.TextItem(anchor=(0, 0))
+#         # self.labelStatus.setText("Status: ")
+#         # self.labelStatus.setPos(3500, -200)
+#         #
+#         # self.plot.addItem(self.labelRemainingDistance)
+#         # self.plot.addItem(self.labelAngleError)
+#         # self.plot.addItem(self.labelStatus)
+#
+#     def arrive(self):
+#         self.path.get()
+#         self.path.task_done()
+#         if self.pathLinkItems.qsize() > 0:
+#             item = self.pathLinkItems.get()
+#             self.pathLinkItems.task_done()
+#             self.plot.removeItem(item)
+#         item = self.pathPointItems.get()
+#         self.pathPointItems.task_done()
+#         self.plot.removeItem(item)
+#
+#     def onClick(self, event):
+#         items = self.scene().items(event.scenePos())
+#         for item in items:
+#             if isinstance(item, pg.PlotItem) and item == self.plot:
+#                 if event.modifiers() == pg.QtCore.Qt.ShiftModifier:
+#                     coordinate = self.plot.vb.mapSceneToView(event.scenePos())
+#                     self.path.put(coordinate)
+#                     circle = pg.QtGui.QGraphicsEllipseItem(-self.pointRadius, -self.pointRadius, self.pointRadius * 2, self.pointRadius * 2)
+#                     circle.setPen(pg.mkPen('y'))
+#                     circle.setBrush(pg.mkBrush('y'))
+#                     if self.pathPointItems.qsize() > 0:
+#                         link = QtGui.QGraphicsLineItem(QtCore.QLineF(coordinate, self.pathPointItems.queue[-1].pos()))
+#                         link.setPen(pg.mkPen('y'))
+#                         self.plot.addItem(link)
+#                         self.pathLinkItems.put(link)
+#                     self.plot.addItem(circle)
+#                     circle.setPos(coordinate.x(), coordinate.y())
+#                     self.pathPointItems.put(circle)
+#                     self.pathAdded.emit()
+#                 if event.modifiers() == pg.QtCore.Qt.ControlModifier:
+#                     self.clearPath()
+#
+#     def clearPath(self):
+#         while not self.path.empty():
+#             self.arrive()
+#         self.pathCleared.emit()
+#
+#     def keyPressEvent(self, event):
+#         super(ArenaWidget, self).keyPressEvent(event)
+#         self.keyPressed.emit(event)
+#
+#     def keyReleaseEvent(self, event):
+#         super(ArenaWidget, self).keyReleaseEvent(event)
+#         self.keyReleased.emit(event)
+
+class LidarGUI(QtGui.QWidget):
+    lidarFailed = QtCore.pyqtSignal()
+    eStopPressed = QtCore.pyqtSignal()
+    keyReleased = QtCore.pyqtSignal(QtGui.QKeyEvent)
+    def __init__(self):
+        QtGui.QWidget.__init__(self)
+
+        self.plots = []
+        self.curves = []
+        self.lineEdits = [None]*9
+        self.labels = [None]*9
+        self.checkBoxes = [None]*5
+        self.labelStatus = None
+        self.labelSystemStatus = None
+        self.labelRemainingDistance = None
+        self.labelAngleError = None
+        self.setupUI()
+        self.params = Parameter.create(name='params', type='group', children=[
+            dict(name ='Commands', type='group', children=[
+                dict(name='Emergency Stop', type='action'),
+                dict(name='XBox Controller On', type='action'),
+                dict(name='XBox Controller Off', type='action'),
+                dict(name='Pause', type='action'),
+            ]),
+            dict(name='Arduino Settings', type='group', children=[
+                dict(name='Reset', type='action'),
+                dict(name='Speed Limit', type='int', value=25, dec=False, step=5, limits=[5, 100]),
+            ]),
+            dict(name='Mining Controls', type='group', children=[
+                dict(name='Forward', type='action'),
+                dict(name='Stop', type='action'),
+                dict(name='Reverse', type='action'),
+                dict(name='Slider Position', type='int', value=25, dec=False, step=5, limits=[0, 100]),
+                dict(name='Slider Speed', type='int', value=25, dec=False, step=5, limits=[0, 100]),
+                dict(name='Tilter Position', type='int', value=25, dec=False, step=5, limits=[0, 100]),
+                dict(name='Tilter Speed', type='int', value=25, dec=False, step=5, limits=[0, 100]),
+            ]),
+            dict(name='LIDAR Params', type='group', children=[
+                dict(name='Start', type='action'),
+                dict(name='Stop', type='action'),
+                dict(name='Save', type='action'),
+                dict(name='Load', type='action'),
+                dict(name='ANGLE_GAP', type='float', value=3.0, dec=False, step=0.5, limits=[0.0001, None]),
+                dict(name='AVE_ANGLE_GAP', type='float', value=np.radians(12), dec=False, step=0.5,
+                     limits=[0.0001, None]),
+                dict(name='AVE_GAP_DX_DY', type='float', value=radTodydx(np.radians(12)), dec=False, step=0.5,
+                     limits=[0.0001, None]),
+                dict(name='AVE_DIST_GAP', type='float', value=50, dec=False, step=5, limits=[0.0001, None]),
+                dict(name='MARKER_LENGTH_MIN', type='float', value=750, dec=False, step=100, limits=[0.0001, None]),
+                dict(name='MARKER_LENGTH_MAX', type='float', value=920, dec=False, step=10, limits=[0.0001, None]),
+                dict(name='MARKER_QUALITY_MAX', type='float', value=10, dec=False, step=5, limits=[0.0001, None]),
+                dict(name='ISO_QUALITY_LENGTH', type='float', value=500, dec=False, step=100, limits=[0.0001, None]),
+                dict(name='DIFF_GAP', type='float', value=0.5, dec=False, step=0.1, limits=[0.0001, None]),
+            ]),
+            dict(name='GUI Controls', type='group', children=[
+                dict(name='PRINT_RAW_DATA', type='action'),
+                dict(name='SHOW_QUALITY', type='action'),
+                dict(name='HIDE_QUALITY', type='action'),
+                dict(name='BRUSH', type='list', values=["brushesMarkerLengthFilter", "brushesAveFilter", "quality"]),
+                dict(name='DEBUG_MODE', type='bool', value=True),
+                dict(name='SHOW_RAW_DATA', type='bool', value=False),
+                dict(name='SHOW_ROBOT_POS', type='bool', value=True),
+                dict(name='IS_ACTIVE', type='bool', value=True),
+            ]),
+            dict(name='Distance PID', type='group', children=[
+                dict(name='Zero Distance', type='int', value=100, dec=False, step=100, limits=[1, 5000]),
+                dict(name='Stop', type='action'),
+                dict(name='Kp', type='float', value=0.2, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Ki', type='float', value=0.15, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Kd', type='float', value=0.03, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Sample Time', type='float', value=200, dec=False, step=100, limits=[1, None]),
+            ]),
+            dict(name='Orientation PID', type='group', children=[
+                dict(name='Zero Angle', type='int', value=2, dec=False, step=1, limits=[-180, 180]),
+                dict(name='Max Angle', type='int', value=10, dec=False, step=1, limits=[-180, 180]),
+                dict(name='Stop', type='action'),
+                dict(name='Kp', type='float', value=0.2, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Ki', type='float', value=0.15, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Kd', type='float', value=0.03, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Sample Time', type='float', value=200, dec=False, step=100, limits=[1, None]),
+            ]),
+            dict(name='Self-Alignment PID', type='group', children=[
+                dict(name='Start', type='action'),
+                dict(name='Stop', type='action'),
+                dict(name='Set Distance', type='int', value=300, dec=False, step=50, limits=[50, 1000]),
+                dict(name='Kp', type='float', value=0.2, dec=False, step=0.01, limits=[0, None]),
+                dict(name='Ki', type='float', value=0, dec=False, step=10, limits=[0, None]),
+                dict(name='Kd', type='float', value=0, dec=False, step=5, limits=[0, None]),
+                dict(name='Sample Time', type='float', value=200, dec=False, step=100, limits=[1, None]),
+            ]),
+            dict(name='Timers', type='group', children=[
+                dict(name='stillAliveTimer', type='int', value=500, dec=False, step=10, limits=[1, 5000]),
+                dict(name='xboxTimer', type='int', value=1, dec=False, step=10, limits=[1, 5000]),
+                dict(name='distanceSensorsTimer', type='int', value=20, dec=False, step=10, limits=[1, 5000]),
+                dict(name='lidarTimer', type='int', value=10, dec=False, step=10, limits=[1, 5000]),
+                dict(name='goToTimer', type='int', value=10, dec=False, step=10, limits=[1, 5000]),
+                dict(name='correctOrientationTimer', type='int', value=200, dec=False, step=10, limits=[1, 5000]),
+        ]),
+            #
+            # params = [
+            #     {'name': 'Basic parameter data types', 'type': 'group', 'children': [
+            #         {'name': 'Integer', 'type': 'int', 'value': 10},
+            #         {'name': 'Float', 'type': 'float', 'value': 10.5, 'step': 0.1},
+            #         {'name': 'String', 'type': 'str', 'value': "hi"},
+            #         {'name': 'List', 'type': 'list', 'values': [1, 2, 3], 'value': 2},
+            #         {'name': 'Named List', 'type': 'list', 'values': {"one": 1, "two": "twosies", "three": [3, 3, 3]},
+            #          'value': 2},
+            #         {'name': 'Boolean', 'type': 'bool', 'value': True, 'tip': "This is a checkbox"},
+            #         {'name': 'Color', 'type': 'color', 'value': "FF0", 'tip': "This is a color button"},
+            #         {'name': 'Gradient', 'type': 'colormap'},
+            #         {'name': 'Subgroup', 'type': 'group', 'children': [
+            #             {'name': 'Sub-param 1', 'type': 'int', 'value': 10},
+            #             {'name': 'Sub-param 2', 'type': 'float', 'value': 1.2e6},
+            #         ]},
+            #         {'name': 'Text Parameter', 'type': 'text', 'value': 'Some text...'},
+            #         {'name': 'Action Parameter', 'type': 'action'},
+            #     ]}]
+            ])
+        self.tree.setParameters(self.params, showTop=False)
+        
+
+    def loadLidarParams(self, fileName):
+        with open("fileName", 'r') as input:
+            for paramString in input.readlines():
+                temp = paramString.split('=')
+                print(temp)
+                self.params.param("LIDAR Params", temp[0]).setValue(float(temp[1]))
+
+    def saveLidarPamras(self, fileName):
+        with open("fileName", 'w') as out:
+            for child in self.params.param("LIDAR Params"):
+                if child.type() != "action":
+                    out.write(child.name() + "=" + str(child.value())+ '\n')
+
+    def setupUI(self):
+        self.layout = QtGui.QVBoxLayout()
+        self.layout.setContentsMargins(0,0,0,0)
+        self.setLayout(self.layout)
+        self.splitter = QtGui.QSplitter()
+        self.splitter.setOrientation(QtCore.Qt.Horizontal)
+        self.layout.addWidget(self.splitter)
+        self.splitterDrillControl = QtGui.QSplitter()
+        self.splitterDrillControl.setOrientation(QtCore.Qt.Vertical)
+        self.splitter.addWidget(self.splitterDrillControl)
+
+        self.tree = ParameterTree(showHeader=False)
+        self.splitterDrillControl.addWidget(self.tree)
+
+        #change here
+        # self.augerControlWidget = AugerControlWidget()
+        # self.splitterDrillControl.addWidget(self.augerControlWidget)
+
+
+        self.splitter2 = QtGui.QSplitter()
+        self.splitter2.setOrientation(QtCore.Qt.Vertical)
+        self.splitter.addWidget(self.splitter2)
+
+        self.statusBar = QtGui.QLabel("Status "*20)
+        self.statusBar.setStyleSheet("QLabel {color : green; }")
+        self.splitter3 = QtGui.QSplitter()
+        self.splitter3.setOrientation(QtCore.Qt.Horizontal)
+        self.splitter2.addWidget(self.statusBar)
+
+        self.qualityPlotWidget = QualityPlotWidget()
+        self.arenaWidget = ArenaWidget()
+        self.splitter2.addWidget(self.arenaWidget)
+        self.splitter2.addWidget(self.qualityPlotWidget)
 
     def setRobotPos(self, distance, angle, robotOrientation):
-        self.robot.blind(False)
-        self.robot.setPos(distance*np.cos(np.radians(angle)), distance*np.sin(np.radians(angle)))
-        self.robot.setRotation(robotOrientation)
+        robotPos = xy(distance, angle)
+        self.arenaWidget.robot.blind(False)
+        self.arenaWidget.robot.setPos(robotPos[0], robotPos[1])
+        self.arenaWidget.robot.setRotation(robotOrientation)
 
-class RMCLidar(QtCore.QObject):
-    paras = ["ANGLE_GAP",
-           "DIFF_GAP",
-           "AVE_ANGLE_GAP",
-           "AVE_GAP_DX_DY",
-           "AVE_DIST_GAP",
-           "MARKER_LENGTH_MIN",
-           "MARKER_LENGTH_MAX",
-           "MARKER_QUALITY_MAX"]
-    ANGLE_GAP = 0
-    DIFF_GAP = 1
-    AVE_ANGLE_GAP = 2
-    AVE_GAP_DX_DY = 3
-    AVE_DIST_GAP = 4
-    MARKER_LENGTH_MIN = 5
-    MARKER_LENGTH_MAX = 6
-    MARKER_QUALITY_MAX = 7
-    flags = [
-           "DEBUG_MODE",
-            "SHOW_RAW_DATA",
-            "SHOW_ROBOT_POS",
-           "PRINT_RAW_DATA",
-           "IS_ACTIVE"
-            ]
-    DEBUG_MODE = 0
-    SHOW_RAW_DATA = 1
-    SHOW_ROBOT_POS = 2
-    PRINT_RAW_DATA = 3
-    IS_ACTIVE = 4
+        self.arenaWidget.labelRemainingDistance.setPos(robotPos[0] - 500, robotPos[1] - 400)
+        self.arenaWidget.labelAngleError.setPos(robotPos[0] - 500, robotPos[1] - 600)
+        self.arenaWidget.labelStatus.setPos(robotPos[0] - 500, robotPos[1] - 800)
+
+    def keyPressEvent(self, event):
+        super(LidarGUI, self).keyPressEvent(event)
+        key = event.key()
+        if key == pg.QtCore.Qt.Key_Escape or key == pg.QtCore.Qt.Key_Space:
+            self.eStopPressed.emit()
+
+    def lidarStartAnimation(self):
+        self.statusBar.setText("LIDAR started")
+        self.statusBar.setStyleSheet('color: green')
+
+    def lidarFailAnimation(self):
+        self.statusBar.setText("LIDAR failed")
+        self.statusBar.setStyleSheet('color: red')
+
+    def lidarStopAnimation(self):
+        self.statusBar.setText("LIDAR stopped")
+        self.statusBar.setStyleSheet('color: yellow')
+
+class Localizer(QtCore.QObject):
+    # paras = ["ANGLE_GAP",
+    #        "DIFF_GAP",
+    #        "AVE_ANGLE_GAP",
+    #        "AVE_GAP_DX_DY",
+    #        "AVE_DIST_GAP",
+    #        "MARKER_LENGTH_MIN",
+    #        "MARKER_LENGTH_MAX",
+    #        "MARKER_QUALITY_MAX",
+    #         "ISO_QUALITY_LENGTH"]
+    # ANGLE_GAP = 0
+    # DIFF_GAP = 1
+    # AVE_ANGLE_GAP = 2
+    # AVE_GAP_DX_DY = 3
+    # AVE_DIST_GAP = 4
+    # MARKER_LENGTH_MIN = 5
+    # MARKER_LENGTH_MAX = 6
+    # MARKER_QUALITY_MAX = 7
+    # ISO_QUALITY_LENGTH = 8
+    # flags = [
+    #        "DEBUG_MODE",
+    #         "SHOW_RAW_DATA",
+    #         "SHOW_ROBOT_POS",
+    #        "PRINT_RAW_DATA",
+    #        "IS_ACTIVE"
+    #         ]
+    # DEBUG_MODE = 0
+    # SHOW_RAW_DATA = 1
+    # SHOW_ROBOT_POS = 2
+    # PRINT_RAW_DATA = 3
+    # IS_ACTIVE = 4
 
     lidarFailed = QtCore.pyqtSignal()
     lidarStopped = QtCore.pyqtSignal()
     lidarStarted = QtCore.pyqtSignal()
-    def __init__(self, port, ui = None):
-        super(RMCLidar, self).__init__()
+    def __init__(self, ui = None):
+        super(Localizer, self).__init__()
         self.ui = ui
-        self.port = port
-        self.p = [None]*10
-        self.p[self.ANGLE_GAP] = 3.0
-        self.p[self.DIFF_GAP] = 0.5
-        self.p[self.AVE_ANGLE_GAP] = np.radians(12)
-        self.p[self.AVE_GAP_DX_DY] = radTodydx(self.p[self.AVE_ANGLE_GAP])
-        self.p[self.AVE_DIST_GAP] = 50
-        self.p[self.MARKER_LENGTH_MIN] = 750
-        self.p[self.MARKER_LENGTH_MAX] = 920
-        self.p[self.MARKER_QUALITY_MAX] = 1
-        self.f = [None] * 10
-        self.f[self.DEBUG_MODE] = True
-        self.f[self.SHOW_RAW_DATA] = True
-        self.f[self.SHOW_ROBOT_POS] = True
-        self.f[self.PRINT_RAW_DATA] = False
-        self.f[self.IS_ACTIVE] = True
-
         self.iterator = None
         self.scan = None
 
@@ -323,57 +602,41 @@ class RMCLidar(QtCore.QObject):
         self.robotOrientation = 0
         self.newPos = False
 
-        self.lidarFailed.connect(self.stopLidar)
+        self.lidarFailed.connect(self.stop)
         self.lidar = None
 
-        self.setupGUI()
+        if self.ui is not None:
+            self.setupGUI()
 
         self.lastClicked = []
         self.lastText = []
 
-    def init(self):
-        try:
-            self.lidar = RPLidar(self.port)
-            print(self.lidar.get_info())
-            print(self.lidar.get_health())
-            self.iterator = self.lidar.iter_scans(max_buf_meas=2000)
-            for i in range(3):
-                next(self.iterator)
-            return True
-        except:
-            print("Lidat init failed")
-            self.lidarFailed.emit()
-            return False
-
     def _update(self):
         if self.scan is not None:
             # make polar data
+            scanLength = len(self.scan[1])
+            quality = self.scan[2]
+            angle = np.degrees(self.scan[0])+180
+            distance = self.scan[1]
+            rad = np.degrees(self.scan[0])+180
+
             scanLength = len(self.scan[0])
             quality = np.array(self.scan[0])
             angle = np.array(self.scan[1])
             distance = np.array(self.scan[2])
             rad = np.deg2rad(angle)
-            x = distance * np.cos(rad)
-            y = distance * np.sin(rad)
-            dy = np.diff(y)
-            dy = np.append(dy, y[0] - y[-1])
-            dx = np.diff(x)
-            dx = np.append(dx, x[0] - x[-1])
-            dd = np.sqrt(dy * dy + dx * dx)
-            dydx = dy / dx
-            dydxAngle = np.arctan2(dy, dx)
 
             # angle gap
             angleFilter = np.zeros(scanLength)
             region = 0
             for i in range(scanLength - 1):  # make sure data points in continous angles are in one group.
                 angleFilter[i] = region
-                if angle[i + 1] - angle[i] > self.p[self.ANGLE_GAP]:
+                if angle[i + 1] - angle[i] > self.ANGLE_GAP.value():
                     region += 1
 
             for i in range(-1, scanLength - 1, 1):  # connect 2 ends of circle
                 angleFilter[i] = region
-                if angle[i + 1] - angle[i] > self.p[self.ANGLE_GAP]:
+                if angle[i + 1] - angle[i] > self.ANGLE_GAP.value():
                     break
 
             aveFilter = np.zeros(scanLength)
@@ -406,8 +669,8 @@ class RMCLidar(QtCore.QObject):
                         aveDydx = sumDydx / count
                         aveAngle = sumAngle / count
                         aveDist = sumDist / count
-                        if (abs(aveDist - dd[i]) < self.p[self.AVE_DIST_GAP] and (abs(aveDydx - dydx[i]) < self.p[self.AVE_GAP_DX_DY] or abs(
-                                    aveAngle - dydxAngle[i]) < self.p[self.AVE_ANGLE_GAP])):  # yes straight line
+                        if (abs(aveDist - dd[i]) < self.AVE_DIST_GAP.value() and (abs(aveDydx - dydx[i]) < self.AVE_GAP_DX_DY.value() or abs(
+                                    aveAngle - dydxAngle[i]) < self.AVE_ANGLE_GAP.value())):  # yes straight line
                             sumDydx += dydx[i]
                             sumAngle += dydxAngle[i]
                             sumDist += dd[i]
@@ -420,8 +683,8 @@ class RMCLidar(QtCore.QObject):
                             dontIncease = True
 
             sum = 0
-            SumQuality = 0
-            SumDistance = 0
+            # SumQuality = 0
+            # SumDistance = 0
             count = 0
             markerLength = np.zeros(scanLength)
             markerNum = 1
@@ -429,29 +692,29 @@ class RMCLidar(QtCore.QObject):
             for i in range(scanLength - 1):
                 if aveFilter[i] == aveFilter[i + 1]:
                     sum += dd[i]
-                    SumQuality += quality[i]
-                    SumDistance += distance[i]
+                    # SumQuality += quality[i]
+                    # SumDistance += distance[i]
                     count += 1
                     markerLength[i] = 0
                 else:
                     if count < 5:
                         sum = 0
-                        SumQuality = 0
-                        SumDistance = 0
+                        # SumQuality = 0
+                        # SumDistance = 0
                         count = 0
                     else:
-                        if sum > self.p[self.MARKER_LENGTH_MIN] and sum < self.p[self.MARKER_LENGTH_MAX]:
-                            if SumQuality // count > self.p[self.MARKER_QUALITY_MAX] - SumDistance // count // 500:
-                                for j in range(count + 1):
-                                    markerLength[i - j] = markerNum
-                                markerNum += 1
+                        if sum > self.MARKER_LENGTH_MIN.value() and sum < self.MARKER_LENGTH_MAX.value():
+                            # if SumQuality // count > self.MARKER_QUALITY_MAX.value() - SumDistance // count // 500:
+                            for j in range(count + 1):
+                                markerLength[i - j] = markerNum
+                            markerNum += 1
                         sum = 0
                         count = 0
             for i in range(-1, scanLength - 1):
                 if aveFilter[i] == aveFilter[i + 1]:
                     sum += dd[i]
-                    SumQuality += quality[i]
-                    SumDistance += distance[i]
+                    # SumQuality += quality[i]
+                    # SumDistance += distance[i]
                     count += 1
                     markerLength[i] = 0
                 else:
@@ -459,55 +722,282 @@ class RMCLidar(QtCore.QObject):
 
                         break
                     else:
-                        if sum > self.p[self.MARKER_LENGTH_MIN] and sum < self.p[self.MARKER_LENGTH_MAX]:
-                            if SumQuality // count > self.p[self.MARKER_QUALITY_MAX] - SumDistance // count // 500:
-                                for j in range(count + 1):
-                                    markerLength[i - j] = markerNum
-                                markerNum += 1
+                        if sum > self.MARKER_LENGTH_MIN.value() and sum < self.MARKER_LENGTH_MAX.value():
+                            # if SumQuality // count > self.MARKER_QUALITY_MAX.value() - SumDistance // count // 500:
+                            for j in range(count + 1):
+                                markerLength[i - j] = markerNum
+                            markerNum += 1
                         break
+
+            # qualityFilter = np.zeros(scanLength)
 
             # display robot pos
             unique, indices, count = np.unique(markerLength, return_index=True, return_counts=True)
-            if len(unique) == 2:
-                firstPointIndex = indices[1]
-                lastPointIndex = firstPointIndex + count[1] - 1
-                self.robotDistance, self.robotAngle, self.robotOrientation = transform(
-                    (x[firstPointIndex], y[firstPointIndex]),
-                    (x[lastPointIndex], y[lastPointIndex]))
-                self.newPos = True
-            else:
-
-                pass
-                # self.robot.blind(True)
+            for i in range(1, len(unique), 1):
+                regions = self.qualityCheck(dq[indices[i]:indices[i]+count[i]])
+                rUnique, rIndices, rCount = np.unique(regions, return_index=True, return_counts=True)
+                if len(rUnique) == 2:
+                    bIndex = rIndices[1]
+                    p1 = (x[indices[i]], y[indices[i]])
+                    p2 = (x[indices[i]+bIndex-1], y[indices[i]+bIndex-1])
+                    p3 = (x[indices[i]+bIndex], y[indices[i]+bIndex])
+                    p4 = (x[indices[i]+len(regions)-1], y[indices[i]+len(regions)-1])
+                    if abs((distanceBetween(p1,p2) - distanceBetween(p3,p4))) < self.ISO_QUALITY_LENGTH.value():
+                        firstPointIndex = indices[i]
+                        lastPointIndex = indices[i]+len(regions)-1
+                        self.robotDistance, self.robotAngle, self.robotOrientation = transform(
+                            (x[firstPointIndex], y[firstPointIndex]),
+                            (x[lastPointIndex], y[lastPointIndex]))
+                        self.newPos = True
+                        #UNIQUE MARKER
+                        for ii in range(len(regions)):
+                            markerLength[indices[i]+ii] = regions[ii]
+                    else:
+                        for ii in range(len(regions)):
+                            markerLength[indices[i] + ii] = 0
+                else:
+                    for ii in range(len(regions)):
+                        markerLength[indices[i]+ii] = 0
 
             #display data
-            if self.f[self.DEBUG_MODE] and self.ui is not None:
-                comboBoxValue = self.ui.comboBox.value()
-                if self.f[self.SHOW_RAW_DATA]:
-                    if comboBoxValue == "brushesMarkerLengthFilter":
-                        for i in range(len(markerLength)):
-                            if markerLength[i] != 0:
-                                markerLength[i] = quality[i]
-                        brushes = getBrushes(markerLength, 100)
-                    elif comboBoxValue == "brushesAveFilter":
+            if self.DEBUG_MODE.value() and self.ui is not None:
+                if self.SHOW_RAW_DATA.value():
+                    brushType = self.BRUSH.value()
+                    if brushType == "brushesMarkerLengthFilter":
+                        # for i in range(len(markerLength)):
+                        #     if markerLength[i] != 0:
+                        #         markerLength[i] = quality[i]
+                        brushes = getBrushes(markerLength, 5)
+                    elif brushType == "brushesAveFilter":
                         brushes = getBrushes(aveFilter, 5)
-                    self.ui.curves[0].setData(x=x, y=y, data=quality)  # polar
-                    self.ui.curves[2].setData(x=angle, y=quality)
-                    self.ui.curves[0].setBrush(brushes)
-                    self.ui.curves[2].setBrush(brushes)
-                if self.f[self.PRINT_RAW_DATA]:
-                    print("ave gap: ", self.p[self.AVE_GAP_DX_DY])
-                    print("ave aveAngleGap: ", self.p[self.AVE_ANGLE_GAP])
+                    elif brushType == "quality":
+                        brushes = getBrushes(quality, 2000)
+                    self.ui.qualityPlotWidget.polarCurve.setData(x=x, y=y, data=quality)  # polar
+                    self.ui.qualityPlotWidget.qualityCurve.setData(x=angle, y=quality)
+                    self.ui.qualityPlotWidget.polarCurve.setBrush(brushes)
+                    self.ui.qualityPlotWidget.qualityCurve.setBrush(brushes)
+                if self.PRINT_RAW_DATA.value():
+                    print("ave gap: ", self.AVE_GAP_DX_DY.value())
+                    print("ave aveAngleGap: ", self.AVE_ANGLE_GAP.value())
                     print("Angle", "Quality", "Distance", "Angle Filter", "dydx", "dydxAngle", "aveFilter",
                           "makerDistFilter", sep='\t\t\t\t')
                     for i in range(scanLength):
-                        pass
                         print(round(angle[i],2), round(quality[i],2), round(distance[i],2), round(angleFilter[i],2), round(dydx[i],2), round(dydxAngle[i],2), round(aveFilter[i],2), round(markerLength[i],2), sep='\t\t\t\t')
                     print("End")
-                if self.f[self.SHOW_ROBOT_POS]:
+                if self.SHOW_ROBOT_POS.value():
+                    self.ui.setRobotPos(self.robotDistance, self.robotAngle, self.robotOrientation)
+
+    def _updateHokuyo(self):
+        if self.scan is not None:
+            # make polar data
+            scanLength = self.scan[0].size
+            angle = self.scan[0] #in rad
+            distance = self.scan[1]
+            quality = self.scan[2]
+
+            x = distance * np.cos(angle)
+            y = distance * np.sin(angle)
+            dq = np.diff(quality)
+            dq = np.append(dq, quality[0] - quality[-1])
+            dy = np.diff(y)
+            dy = np.append(dy, y[0] - y[-1])
+            dx = np.diff(x)
+            dx = np.append(dx, x[0] - x[-1])
+            dd = np.sqrt(dy * dy + dx * dx)
+            dydx = dy / dx
+            dydxAngle = np.arctan2(dy, dx)
+
+            # angle gap
+            angleFilter = np.zeros(scanLength)
+            region = 0
+            for i in range(scanLength - 1):  # make sure data points in continous angles are in one group.
+                angleFilter[i] = region
+                if angle[i + 1] - angle[i] > self.ANGLE_GAP.value():
+                    region += 1
+
+            for i in range(-1, scanLength - 1, 1):  # connect 2 ends of circle
+                angleFilter[i] = region
+                if angle[i + 1] - angle[i] > self.ANGLE_GAP.value():
+                    break
+
+            aveFilter = np.zeros(scanLength)
+            region = 1
+            sumDx = 0
+            sumDy = 0
+            sumAngle = 0
+            sumDist = 0
+            count = 0
+            dontIncease = False
+            for i in range(scanLength):  # could add distance between points
+                if angleFilter[i] != angleFilter[i - 1]:  # new region
+                    count = 1
+                    sumDydx = dydx[i]
+                    sumAngle = dydxAngle[i]
+                    sumDist = dd[i]
+                    # if not dontIncease:
+                    region += 1
+                    # dontIncease = False
+                    aveFilter[i] = region
+                else:  # same region
+                    if count == 0:
+                        count = 1
+                        sumDydx = dydx[i]
+                        sumAngle = dydxAngle[i]
+                        sumDist = dd[i]
+                        region += 1
+                        aveFilter[i] = region  # in the same subregion
+                    else:
+                        aveDydx = sumDydx / count
+                        aveAngle = sumAngle / count
+                        aveDist = sumDist / count
+                        if (abs(aveDist - dd[i]) < self.AVE_DIST_GAP.value() and (
+                                abs(aveDydx - dydx[i]) < self.AVE_GAP_DX_DY.value() or abs(
+                                    aveAngle - dydxAngle[
+                                    i]) < self.AVE_ANGLE_GAP.value())):  # yes straight line
+                            sumDydx += dydx[i]
+                            sumAngle += dydxAngle[i]
+                            sumDist += dd[i]
+                            count += 1
+                            aveFilter[i] = region
+                        else:
+                            count = 0
+                            aveFilter[i] = region  # in the same subregion
+                            region += 1
+                            dontIncease = True
+
+            sum = 0
+            # SumQuality = 0
+            # SumDistance = 0
+            count = 0
+            markerLength = np.zeros(scanLength)
+            markerNum = 1
+
+            for i in range(scanLength - 1):
+                if aveFilter[i] == aveFilter[i + 1]:
+                    sum += dd[i]
+                    # SumQuality += quality[i]
+                    # SumDistance += distance[i]
+                    count += 1
+                    markerLength[i] = 0
+                else:
+                    if count < 5:
+                        sum = 0
+                        # SumQuality = 0
+                        # SumDistance = 0
+                        count = 0
+                    else:
+                        if sum > self.MARKER_LENGTH_MIN.value() and sum < self.MARKER_LENGTH_MAX.value():
+                            # if SumQuality // count > self.MARKER_QUALITY_MAX.value() - SumDistance // count // 500:
+                            for j in range(count + 1):
+                                markerLength[i - j] = markerNum
+                            markerNum += 1
+                        sum = 0
+                        count = 0
+            for i in range(-1, scanLength - 1):
+                if aveFilter[i] == aveFilter[i + 1]:
+                    sum += dd[i]
+                    # SumQuality += quality[i]
+                    # SumDistance += distance[i]
+                    count += 1
+                    markerLength[i] = 0
+                else:
+                    if count < 5:
+
+                        break
+                    else:
+                        if sum > self.MARKER_LENGTH_MIN.value() and sum < self.MARKER_LENGTH_MAX.value():
+                            # if SumQuality // count > self.MARKER_QUALITY_MAX.value() - SumDistance // count // 500:
+                            for j in range(count + 1):
+                                markerLength[i - j] = markerNum
+                            markerNum += 1
+                        break
+
+            # qualityFilter = np.zeros(scanLength)
+
+            # display robot pos
+            unique, indices, count = np.unique(markerLength, return_index=True, return_counts=True)
+            for i in range(1, len(unique), 1):
+                regions = self.qualityCheck(dq[indices[i]:indices[i] + count[i]])
+                rUnique, rIndices, rCount = np.unique(regions, return_index=True, return_counts=True)
+                if len(rUnique) == 2:
+                    bIndex = rIndices[1]
+                    p1 = (x[indices[i]], y[indices[i]])
+                    p2 = (x[indices[i] + bIndex - 1], y[indices[i] + bIndex - 1])
+                    p3 = (x[indices[i] + bIndex], y[indices[i] + bIndex])
+                    p4 = (x[indices[i] + len(regions) - 1], y[indices[i] + len(regions) - 1])
+                    if abs((distanceBetween(p1, p2) - distanceBetween(p3,
+                                                                      p4))) < self.ISO_QUALITY_LENGTH.value():
+                        firstPointIndex = indices[i]
+                        lastPointIndex = indices[i] + len(regions) - 1
+                        self.robotDistance, self.robotAngle, self.robotOrientation = transform(
+                            (x[firstPointIndex], y[firstPointIndex]),
+                            (x[lastPointIndex], y[lastPointIndex]))
+                        self.newPos = True
+                        # UNIQUE MARKER
+                        for ii in range(len(regions)):
+                            markerLength[indices[i] + ii] = regions[ii]
+                    else:
+                        for ii in range(len(regions)):
+                            markerLength[indices[i] + ii] = 0
+                else:
+                    for ii in range(len(regions)):
+                        markerLength[indices[i] + ii] = 0
+
+            # display data
+            if self.DEBUG_MODE.value() and self.ui is not None:
+                if self.SHOW_RAW_DATA.value():
+                    brushType = self.BRUSH.value()
+                    if brushType == "brushesMarkerLengthFilter":
+                        brushes = getBrushes(markerLength, 5)
+                    elif brushType == "brushesAveFilter":
+                        brushes = getBrushes(aveFilter, 5)
+                    elif brushType == "quality":
+                        brushes = getBrushes(quality, 100)
+                    self.ui.qualityPlotWidget.polarCurve.setData(x=x, y=y, data=quality)  # polar
+                    self.ui.qualityPlotWidget.qualityCurve.setData(x=angle, y=quality)
+                    self.ui.qualityPlotWidget.polarCurve.setBrush(brushes)
+                    self.ui.qualityPlotWidget.qualityCurve.setBrush(brushes)
+                if self.PRINT_RAW_DATA.value():
+                    print("ave gap: ", self.AVE_GAP_DX_DY.value())
+                    print("ave aveAngleGap: ", self.AVE_ANGLE_GAP.value())
+                    print("Angle", "Quality", "Distance", "Angle Filter", "dydx", "dydxAngle", "aveFilter",
+                          "makerDistFilter", sep='\t\t\t\t')
+                    for i in range(scanLength):
+                        print(round(angle[i], 2), round(quality[i], 2), round(distance[i], 2),
+                              round(angleFilter[i], 2), round(dydx[i], 2), round(dydxAngle[i], 2),
+                              round(aveFilter[i], 2), round(markerLength[i], 2), sep='\t\t\t\t')
+                    print("End")
+                if self.SHOW_ROBOT_POS.value():
                     self.ui.setRobotPos(self.robotDistance, self.robotAngle, self.robotOrientation)
 
     ## Make all plots clickable
+    def qualityCheck(self, dq):
+        regions = [1]*len(dq)
+        currentRegion = 1
+        for i in range(len(dq)):
+            regions[i] = currentRegion
+            if abs(dq[i]) > self.MARKER_QUALITY_MAX.value():
+                currentRegion += 1
+        # sum = 0
+        # count = 0
+
+        # for i in range(len(dq) - 1):  # could add distance between points
+        #     if count == 0:
+        #         count = 1
+        #         sum = dq[i]
+        #         regions[i] = currentRegion
+        #     else:
+        #         ave = sum / count
+        #         if abs(ave - dq[i]) < self.MARKER_QUALITY_MAX.value():  # yes straight line
+        #             sum += dq[i]
+        #             count += 1
+        #             regions[i] = currentRegion
+        #         else:
+        #             count = 0
+        #             regions[i] = currentRegion
+        #             currentRegion +=1
+        # regions[-1] = currentRegion
+        return regions
 
     def clicked(self, plot, points):
         for p in self.lastClicked:
@@ -519,13 +1009,6 @@ class RMCLidar(QtCore.QObject):
             text.setPos(p.pos().x(), p.pos().y())
         self.lastClicked = points
 
-    def update(self):
-        if self.f[self.IS_ACTIVE]:
-            self.scan = next(self.iterator)
-            self._update()
-        else:
-            next(self.iterator)
-
     def getPos(self):
         if self.newPos:
             self.newPos = False
@@ -533,124 +1016,144 @@ class RMCLidar(QtCore.QObject):
         else:
             return None
 
-    def stopLidar(self):
+    def angleDiffTo(self, point):
+        robotToDestAngle = orientation(xy(self.robotDistance, self.robotAngle), point)
+        return self.robotOrientation - robotToDestAngle
+
+    def distanceFromRobotTo(self, point):
+        robotPos = xy(self.robotDistance, self.robotAngle)
+        return distanceBetween(robotPos, point)
+
+    def getDriveParams(self, point):
+        robotPos = xy(self.robotDistance, self.robotAngle)
+        distance = distanceBetween(robotPos, point)
+        robotToDestAngle = orientation(xy(self.robotDistance, self.robotAngle), point)
+        angleDiff = self.robotOrientation - robotToDestAngle
+        usingtail = robotPos[0] > point[0]
+        if usingtail:
+            angleDiff = standardizeAngle(angleDiff+180)
+        return distance, angleDiff, usingtail
+
+    def setShowRobotPos(self, param):
+        state = param.value()
+        if state == True:
+            self.DEBUG_MODE.setValue(True)
+
+    def setPrintRawData(self, param):
+        state = param.value()
+        if state == True:
+            self.DEBUG_MODE.setValue(True)
+
+    def setDebugMode(self, param):
+        state = param.value()
+        if state == False:
+            self.SHOW_ROBOT_POS.setValue(False)
+            self.SHOW_RAW_DATA.setValue(False)
+            self.PRINT_RAW_DATA.setValue(False)
+
+    def setShowRawData(self, param):
+        state = param.value()
+        if state == True:
+            self.DEBUG_MODE.setValue(True)
+
+    def showQuality(self):
+        print("shaow")
+        if len(self.lastText) > 0:
+            self.hideQuality()
+        for p in self.ui.qualityPlotWidget.polarCurve.points():
+            text = pg.TextItem(anchor=(0, 0))
+            self.ui.qualityPlotWidget.polarPlot.addItem(text)
+            text.setText(str(p.data()))
+            text.setPos(p.pos().x(), p.pos().y())
+            self.lastText.append(text)
+
+    def hideQuality(self):
+        for text in self.lastText:
+            self.ui.qualityPlotWidget.polarPlot.removeItem(text)
+
+    def setupGUI(self):
+        self.ANGLE_GAP = self.ui.params.param('LIDAR Params', 'ANGLE_GAP')
+        self.DIFF_GAP = self.ui.params.param('LIDAR Params', 'DIFF_GAP')
+        self.AVE_ANGLE_GAP = self.ui.params.param('LIDAR Params', 'AVE_ANGLE_GAP')
+        self.AVE_GAP_DX_DY = self.ui.params.param('LIDAR Params', 'AVE_GAP_DX_DY')
+        self.AVE_DIST_GAP = self.ui.params.param('LIDAR Params', 'AVE_DIST_GAP')
+        self.MARKER_LENGTH_MIN = self.ui.params.param('LIDAR Params', 'MARKER_LENGTH_MIN')
+        self.MARKER_LENGTH_MAX = self.ui.params.param('LIDAR Params', 'MARKER_LENGTH_MAX')
+        self.MARKER_QUALITY_MAX = self.ui.params.param('LIDAR Params', 'MARKER_QUALITY_MAX')
+        self.ISO_QUALITY_LENGTH = self.ui.params.param('LIDAR Params', 'ISO_QUALITY_LENGTH')
+        self.ui.params.param('LIDAR Params', 'Start').sigActivated.connect(self.start)
+        self.ui.params.param('LIDAR Params', 'Stop').sigActivated.connect(self.stop)
+        self.DEBUG_MODE = self.ui.params.param('GUI Controls', 'DEBUG_MODE')
+        self.SHOW_RAW_DATA = self.ui.params.param('GUI Controls', 'SHOW_RAW_DATA')
+        self.SHOW_ROBOT_POS = self.ui.params.param('GUI Controls', 'SHOW_ROBOT_POS')
+        self.PRINT_RAW_DATA = self.ui.params.param('GUI Controls', 'PRINT_RAW_DATA')
+        self.SHOW_QUALITY = self.ui.params.param('GUI Controls', 'SHOW_QUALITY')
+        self.HIDE_QUALITY = self.ui.params.param('GUI Controls', 'HIDE_QUALITY')
+        self.IS_ACTIVE = self.ui.params.param('GUI Controls', 'IS_ACTIVE')
+        self.BRUSH = self.ui.params.param('GUI Controls', 'BRUSH')
+
+
+        self.DEBUG_MODE.sigValueChanged.connect(self.setDebugMode)
+        self.SHOW_RAW_DATA.sigValueChanged.connect(self.setShowRawData)
+        self.SHOW_ROBOT_POS.sigValueChanged.connect(self.setShowRobotPos)
+        self.PRINT_RAW_DATA.sigValueChanged.connect(self.setPrintRawData)
+        self.SHOW_QUALITY.sigActivated.connect(self.showQuality)
+        self.HIDE_QUALITY.sigActivated.connect(self.hideQuality)
+
+
+        self.lidarStopped.connect(self.ui.lidarStopAnimation)
+        self.lidarStarted.connect(self.ui.lidarStartAnimation)
+        self.lidarFailed.connect(self.ui.lidarFailAnimation)
+
+class RMCRpLidar(Localizer):
+    def __init__(self, serialPort, ui=None):
+        super(RMCRpLidar, self).__init__(ui)
+        self.serialPort = serialPort
+
+    def start(self):
+        try:
+            self.lidar = RPLidar(self.serialPort)
+            self.iterator = self.lidar.iter_scans(max_buf_meas=2000)
+            for i in range(3):
+                next(self.iterator)
+            self.lidarStarted.emit()
+            return True
+        except:
+            self.lidarFailed.emit()
+            return False
+
+    def stop(self):
         if self.lidar is not None:
             self.lidar.stop()
             self.lidar.stop_motor()
             self.lidar.disconnect()
             self.lidar = None
-
-    def angleDiffTo(self, point):
-        robotX = self.robotDistance*np.cos(self.robotAngle)
-        robotY = self.robotDistance*np.sin(self.robotAngle)
-        targetOrientation = np.degrees(np.arctan2(point[1] - robotY,point[0] - robotX))
-        return self.robotOrientation - targetOrientation
-
-    def changeParameter0(self, value):
-        self.changeParameter(0, value)
-    def changeParameter1(self, value):
-        self.changeParameter(1, value)
-    def changeParameter2(self, value):
-        self.changeParameter(2, value)
-    def changeParameter3(self, value):
-        self.changeParameter(3, value)
-    def changeParameter4(self, value):
-        self.changeParameter(4, value)
-    def changeParameter5(self, value):
-        self.changeParameter(5, value)
-    def changeParameter6(self, value):
-        self.changeParameter(6, value)
-    def changeParameter7(self, value):
-        self.changeParameter(7, value)
-    def changeParameter(self, index, value):
-        value = is_number(value)
-        if value != False:
-            print('Updated',self.paras[index],'to', value)
-            self.p[index] = value
-            self._update()
-
-    def setShowRobotPos(self, state):
-        self.f[self.SHOW_ROBOT_POS] = state
-        if state == 2:
-            self.ui.checkBoxes[self.DEBUG_MODE].setCheckState(2)
-
-    def setPrintRawData(self, state):
-        self.f[self.PRINT_RAW_DATA] = state
-        if state == 2:
-            self.ui.checkBoxes[self.DEBUG_MODE].setCheckState(2)
-
-    def setIsActive(self, state):
-        self.f[self.IS_ACTIVE] = state
-
-    def setDebugMode(self, state):
-        print(state)
-        self.f[self.DEBUG_MODE] = state
-        if state == 0:
-            self.ui.checkBoxes[self.SHOW_ROBOT_POS].setCheckState(0)
-            self.ui.checkBoxes[self.SHOW_RAW_DATA].setCheckState(0)
-            self.ui.checkBoxes[self.PRINT_RAW_DATA].setCheckState(0)
-
-    def setShowRawData(self, state):
-        self.f[self.SHOW_RAW_DATA] = state
-        if state == 0:
-            self.lastText = []
-            for p in self.ui.curves[0].points():
-                text = pg.TextItem(anchor=(0, 0))
-                self.ui.plots[0].addItem(text)
-                text.setText(str(p.data()))
-                text.setPos(p.pos().x(), p.pos().y())
-                self.lastText.append(text)
-        elif state == 2:
-            self.ui.checkBoxes[self.DEBUG_MODE].setCheckState(2)
-            for text in self.lastText:
-                # text.remove()
-                # self.ui.curves[0].clear()
-                self.ui.plots[0].removeItem(text)
-
-    def pauseResume(self):
-        currentText = self.ui.buttonPauseResume.text()
-        if currentText == 'Pause':
-            # self.ui.checkBoxes[0].setChecked(False)
-            self.ui.buttonPauseResume.setText('Resume')
-        elif currentText == 'Resume':
-            # self.ui.checkBoxes[0].setChecked(True)
-            self.ui.buttonPauseResume.setText('Pause')
-
-    def connectDisconnect(self):
-        currentText = self.ui.buttonConnectDisconnect.text()
-        if currentText == 'Connect':
-            if self.init():
-                self.ui.buttonConnectDisconnect.setText('Disconnect')
-                self.lidarStarted.emit()
-            #do pause stuff
-        elif currentText == 'Disconnect':
-            self.stopLidar()
-            self.ui.buttonConnectDisconnect.setText('Connect')
             self.lidarStopped.emit()
-            #do resume stuff
 
-    def setupGUI(self):
-        for i, name in enumerate(self.paras):
-            self.ui.labels[i].setText(name)
-            self.ui.lineEdits[i].setText(str(round(self.p[i], 3)))
-        for i, name in enumerate(self.flags):
-            self.ui.checkBoxes[i].setText(name)
-        self.ui.lineEdits[0].textChanged.connect(self.changeParameter0)
-        self.ui.lineEdits[1].textChanged.connect(self.changeParameter1)
-        self.ui.lineEdits[2].textChanged.connect(self.changeParameter2)
-        self.ui.lineEdits[3].textChanged.connect(self.changeParameter3)
-        self.ui.lineEdits[4].textChanged.connect(self.changeParameter4)
-        self.ui.lineEdits[5].textChanged.connect(self.changeParameter5)
-        self.ui.lineEdits[7].textChanged.connect(self.changeParameter7)
+    def update(self):
+        if self.IS_ACTIVE.value():
+            self.scan = next(self.iterator)
+            self._update()
+        else:
+            next(self.iterator)
 
-        for i in range(len(self.flags)):
-            self.ui.checkBoxes[i].setChecked(self.f[i])
-        self.ui.checkBoxes[self.DEBUG_MODE].stateChanged.connect(self.setDebugMode)
-        self.ui.checkBoxes[self.SHOW_RAW_DATA].stateChanged.connect(self.setShowRawData)
-        self.ui.checkBoxes[self.SHOW_ROBOT_POS].stateChanged.connect(self.setShowRobotPos)
-        self.ui.checkBoxes[self.PRINT_RAW_DATA].stateChanged.connect(self.setPrintRawData)
-        self.ui.checkBoxes[self.IS_ACTIVE].stateChanged.connect(self.setIsActive)
-        self.ui.buttonConnectDisconnect.clicked.connect(self.connectDisconnect)
-        self.ui.buttonPauseResume.clicked.connect(self.pauseResume)
-        self.ui.curves[0].sigClicked.connect(self.clicked)
+class RMCHokuyoLidar(Localizer):
+    def __init__(self, ui=None):
+        super(RMCHokuyoLidar, self).__init__(ui)
 
+    def start(self):
+        if self.lidar is not None:
+            self.lidar.close()
+        self.lidar = HokuyoLX()
+        self.lidarStarted.emit()
+
+    def stop(self): #change
+        if self.lidar is not None:
+            self.lidar.close()
+            self.lidarStopped.emit()
+
+    def update(self):
+        if self.IS_ACTIVE.value():
+            timestamp, self.scan = self.lidar.get_filtered_intens()  # Single measurment mode
+            self.scan = self.scan.transpose()
+            self._updateHokuyo()

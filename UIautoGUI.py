@@ -11,6 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
+        MainWindow.setWindowTitle("IIT's Robot Control Software")
         MainWindow.resize(614, 498)
         MainWindow.setStyleSheet("QPushButton {\n"
 "width: 50px;\n"
@@ -488,14 +489,14 @@ class Ui_MainWindow(object):
         self.label_13.setText(_translate("MainWindow", "Speed"))
         self.pushButtonSpeedUp.setText(_translate("MainWindow", "Up"))
         self.pushButtonSpeedDown.setText(_translate("MainWindow", "Down"))
-
-
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
+#
+#
+# if __name__ == "__main__":
+#     import sys
+#     app = QtWidgets.QApplication(sys.argv)
+#     MainWindow = QtWidgets.QMainWindow()
+#     ui = Ui_MainWindow()
+#     ui.setupUi(MainWindow)
+#     MainWindow.show()
+#     sys.exit(app.exec_())
 
