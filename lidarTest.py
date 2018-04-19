@@ -263,6 +263,12 @@ def initLidarGui():
     tilterParam.sigChanged.connect(lambda value: print(value))
     sliderParam.sigChanged.connect(lambda value: print(value))
 
+
+    #draw rocks
+    # ui.arenaWidget.drawRock((20,20))
+    # ui.arenaWidget.clearRock()
+
+
     ui.showMaximized()
     ui.show()
 
@@ -285,6 +291,7 @@ def initLidar():
     lidarTimer.timeout.connect(lidar.update)
     ui.arenaWidget.pathAdded.connect(lambda: goToTimer.start(10))
     ui.arenaWidget.pathCleared.connect(clearCurrentTarget)
+
 
 def clearCurrentTarget():
     global currentTarget, arduino

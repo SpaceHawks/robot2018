@@ -39,7 +39,7 @@ def distanceBetween(point1, point2):
     dy = point1[1] - point2[1]
     return np.sqrt(dx*dx+dy*dy)
 
-def xy(distance, angle):
+def xy(distance, angle):# degrees
     return (distance*np.cos(np.radians(angle)), distance*np.sin(np.radians(angle)))
 
 def orientation(tail, head):
@@ -72,8 +72,6 @@ def is_number(s):
         return n
     except ValueError:
         return False
-
-
 
 class Robot(pg.GraphicsObject):
     def __init__(self, parent = None):
@@ -229,6 +227,9 @@ class ArenaWidget(pg.GraphicsLayoutWidget):
         self.plot.addItem(self.labelAngleError)
         self.plot.addItem(self.labelStatus)
 
+        self.rocks = []
+        self.r = 10
+
     def arrive(self):
         self.path.get()
         self.path.task_done()
@@ -261,6 +262,19 @@ class ArenaWidget(pg.GraphicsLayoutWidget):
                     self.pathAdded.emit()
                 if event.modifiers() == pg.QtCore.Qt.ControlModifier:
                     self.clearPath()
+
+    def drawRock(self, xy):
+        circle = pg.QtGui.QGraphicsEllipseItem(-self.r, -self.r, self.r * 2, self.r * 2)
+        circle.setPen(pg.mkPen('y'))
+        circle.setBrush(pg.mkBrush('y'))
+        self.plot.addItem(circle)
+        circle.setPos(xy[0], xy[1])
+        self.rocks.append(circle)
+
+    def clearRock(self):
+        for item in self.rocks:
+            self.plot.removeItem(item)
+        self.rocks = []
 
     def clearPath(self):
         while not self.path.empty():
