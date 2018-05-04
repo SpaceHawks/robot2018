@@ -8,6 +8,9 @@
 #define REAR_LEFT 2 //channel 5
 #define REAR_RIGHT 3 //channel 6
 #define WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT 20000
+#define CONVEYOR_MOTOR_MECHANICAL_SPEED_LIMIT 20000
+
+
 /*!
 \class Actuator
 \brief This parent class ensures Linear Actuator and motor class inherits the general functions.
@@ -31,7 +34,6 @@ private:
 */
 class LinearActuator : public KangarooChannel, public Actuator {
 public:
-
 	LinearActuator(KangarooSerial& K, char name);
 	long min;
 	long max;
@@ -45,7 +47,7 @@ public:
 //	void setSpeed(long speed);
 	void getExtremes();
 	void setTargetPosDirect(long pos);
-	void setTargetVal(long pos, long newSpeed);
+	void setTargetPosAndSpeed(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
 	void setTargetPos(long pos );
 	void loop();
@@ -80,7 +82,6 @@ public:
 	//Specify the links and initial tuning parameters
 	double Kp = 0.4, Ki = 0, Kd = 0;
 	PID* syncPID;
-
 };
 
 class Motor : public KangarooChannel, public Actuator {
@@ -155,6 +156,16 @@ public:
 	void setDirection(int enable, int direction);
 	void stop();
 };
+
+class Slider: public LinearActuator {
+public:
+	Slider(KangarooSerial& K, char name);
+};
+class Conveyor : public Motor {
+public:
+	Conveyor(KangarooSerial& K, char name);
+	void setSpeedLimit(long newSpeed); //speed is percentage
+};
 /*!
 \class RMCKangaroo1
 \brief  This the main class for Kangaroo X2 Motion Controller
@@ -173,6 +184,8 @@ public:
 	Motors* motors;
 	LinearActuatorPair* linearActuatorPair;
 	Auger* auger;
+	Slider* slider;
+	Conveyor* conveyor;
 	RMCKangaroo(USARTClass &serialPorta);
 	void loop();
 	void begin();

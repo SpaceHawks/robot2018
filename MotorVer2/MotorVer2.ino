@@ -67,8 +67,14 @@ void serialEvent() {
 				case 6://linear actuator pair
 					motorK.linearActuatorPair->setTargetPosAndSpeed(value1, value2);
 					break;
+				case 7://slider
+					//motorK.slider->setTargetPosAndSpeed(value1, value2);
+					break;
 				case 8:// auger on/off reverse/forward
 					motorK.auger->setDirection(value1, value2);
+					break;
+				case 9://conveyor
+					//motorK.conveyor->setTargetSpeed(value1);
 					break;
 				case 10:
 					motorK.motors->drive((signed char)value1, (signed char)value2);
@@ -94,7 +100,7 @@ void serialEvent() {
 
 					break;
 				case 4:
-					Serial.println(motorK.motors->getMotorSpeedS());
+					//Serial.println(motorK.motors->getMotorSpeedS());
 					break;
 				default:
 					break;
@@ -107,6 +113,7 @@ void serialEvent() {
 		}
 	}
 }
+
 bool checkSum(char arrayNum[], int len) {
 	char sum = 0;
 	for (int i = 0; i < len; i++)

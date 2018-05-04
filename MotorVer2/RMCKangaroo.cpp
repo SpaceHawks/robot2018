@@ -58,7 +58,7 @@ void LinearActuator::setTargetPosDirect(long pos)
 /*!
 Sets target position and speed for Linear Actuator.
 */
-void LinearActuator::setTargetVal(long pos, long newSpeed) { //val = 0% to 100%
+void LinearActuator::setTargetPosAndSpeed(long pos, long newSpeed) { //val = 0% to 100%
 	setTargetPos(pos);
 	setSpeed(newSpeed);
 }
@@ -185,7 +185,6 @@ void LinearActuatorPair::loop()
 			channel[1]->setTargetPos(tempTargetVal);
 		}
 	}
-	
 	channel[0]->loop();
 	channel[1]->loop();
 }
@@ -348,15 +347,15 @@ long Motors::getReRightMotorS()
 	return map(-channel[REAR_RIGHT]->status.value(), -(channel[REAR_RIGHT]->speedLimit), channel[REAR_RIGHT]->speedLimit, -100, 100);
 }
 
-long *Motors::getMotorSpeedS()
-{
-	static long speedList[4];
-	speedList[0] = getFrRightMotorS();
-	speedList[1] = getFrLeftMotorS();
-	speedList[2] = getReLeftMotorS();
-	speedList[3] = getReRightMotorS();
-	return speedList;
-}
+//long Motors::getMotorSpeedS()
+//{
+//	long speedList[4];
+//	speedList[0] = getFrRightMotorS();
+//	speedList[1] = getFrLeftMotorS();
+//	speedList[2] = getReLeftMotorS();
+//	speedList[3] = getReRightMotorS();
+//	return speedList;
+//}
 
 void Motors::drive(long drive, long turn)
 {
@@ -437,30 +436,30 @@ void Auger::release()
 
 void Auger::forward()
 {
-	digitalWrite(reversePin, LOW);
 	digitalWrite(enablePin, HIGH);
+	digitalWrite(reversePin, LOW);
 }
 
 void Auger::reverse()
 {
-	digitalWrite(reversePin, HIGH);
 	digitalWrite(enablePin, HIGH);
+	digitalWrite(reversePin, HIGH);
 }
 
 void Auger::setDirection(int enable, int direction)
 {
 	if (enable == 1)
 	{
-		if (direction = 1) //reverse
+		if (direction == 1) //reverse
 		{
 			reverse();
 		}
-		else if (direction = 0) //reverse
+		else if (direction == 0) //reverse
 		{
 			forward();
 		}
 	}
-	else if (enable = 0) {
+	else if (enable == 0) {
 		stop();
 	}
 }
@@ -468,6 +467,8 @@ void Auger::setDirection(int enable, int direction)
 void Auger::stop()
 {
 	digitalWrite(enablePin, LOW);
+	digitalWrite(reversePin, LOW);
+
 }
 
 /*!
@@ -481,6 +482,8 @@ RMCKangaroo::RMCKangaroo(USARTClass &serial)
 	motors = new Motors(*K, '3');
 	linearActuatorPair = new LinearActuatorPair(*K, '1');
 	auger = new Auger(2, 3);
+	//slider = new Slider(*K, '7');
+	//conveyor = new Conveyor(*K, '8');
 }
 /*!
 Executes the loop of the right Linear Actuator
@@ -489,7 +492,8 @@ void RMCKangaroo::loop()
 {
 	motors->loop();
 	linearActuatorPair->loop();
-	//linearActuatorPair->loop();
+	//slider->loop();
+	//conveyor->loop();
 }
 /*!
 Initiates Serial Communication.
@@ -503,5 +507,23 @@ void RMCKangaroo::begin() {
 	//SerialPort->listen();
 	motors->begin();
 	linearActuatorPair->begin();
-	//linearActuatorPair->begin();
+	//slider->begin();
+	//conveyor->begin();
+}
+
+Slider::Slider(KangarooSerial & K, char name): LinearActuator(K, name)
+{
+	maxSpeed = 208;
+}
+
+Conveyor::Conveyor(KangarooSerial & K, char name): Motor(K, name)
+{
+	setSpeedLimit(100);
+}
+
+void Conveyor::setSpeedLimit(long newSpeed)
+{
+	if (newSpeed > 0 && newSpeed <= 100) {
+		speedLimit = map(newSpeed, 0, 100, 0, CONVEYOR_MOTOR_MECHANICAL_SPEED_LIMIT);
+	}
 }
