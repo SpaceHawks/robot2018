@@ -263,3 +263,6 @@ __pycache__/
 *.vcxproj
 MotorVer2/__vm/Compile.vmps.xml
 *.xml
+MotorVer2/__vm/Compile.vmps.xml
+MotorVer2/__vm/Configuration.Debug.vmps.xml
+MotorVer2/__vm/.MotorVer2.vsarduino.h

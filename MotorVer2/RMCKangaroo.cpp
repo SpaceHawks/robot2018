@@ -233,7 +233,7 @@ void Motor::setTargetSpeed(long speed) {
 }
 long Motor::getCurrentSpeed()
 {
-	return status.value();
+	return map(status.value(), -WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT, WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT, -100, 100);
 }
 void Motor::setSpeedLimit(long newSpeed) //speed is percentage
 {
@@ -309,6 +309,7 @@ void Motors::loop()
 			channel[i]->setTargetSpeed(0);
 		}
 		channel[i]->loop();
+		currentSpeeds[i] = channel[i]->getCurrentSpeed();
 	}
 }
 void Motors::begin()
@@ -317,45 +318,6 @@ void Motors::begin()
 		channel[i]->begin();
 	}
 }
-long Motors::getLeftMotorS()
-{
-	return map(-channel[FRONT_LEFT]->status.value(), -(channel[FRONT_LEFT]->speedLimit), channel[FRONT_LEFT]->speedLimit, -100, 100);
-}
-
-long Motors::getRightMotorS()
-{
-	return map(-channel[FRONT_RIGHT]->status.value(), -(channel[FRONT_RIGHT]->speedLimit), channel[FRONT_RIGHT]->speedLimit, -100, 100);
-}
-
-long Motors::getFrRightMotorS()
-{
-	return map(-channel[FRONT_RIGHT]->status.value(), -(channel[FRONT_RIGHT]->speedLimit), channel[FRONT_RIGHT]->speedLimit, -100, 100);
-}
-
-long Motors::getFrLeftMotorS()
-{
-	return map(-channel[FRONT_LEFT]->status.value(), -(channel[FRONT_LEFT]->speedLimit), channel[FRONT_LEFT]->speedLimit, -100, 100);
-}
-
-long Motors::getReLeftMotorS()
-{
-	return map(-channel[REAR_LEFT]->status.value(), -(channel[REAR_LEFT]->speedLimit), channel[REAR_LEFT]->speedLimit, -100, 100);
-}
-
-long Motors::getReRightMotorS()
-{
-	return map(-channel[REAR_RIGHT]->status.value(), -(channel[REAR_RIGHT]->speedLimit), channel[REAR_RIGHT]->speedLimit, -100, 100);
-}
-
-//long Motors::getMotorSpeedS()
-//{
-//	long speedList[4];
-//	speedList[0] = getFrRightMotorS();
-//	speedList[1] = getFrLeftMotorS();
-//	speedList[2] = getReLeftMotorS();
-//	speedList[3] = getReRightMotorS();
-//	return speedList;
-//}
 
 void Motors::drive(long drive, long turn)
 {
@@ -375,6 +337,16 @@ void Motors::drive(long drive, long turn)
 		else if (turn == 100) {
 			rightSpeed = -drive;
 		}
+	}
+}
+
+/*!
+Powers down all wheel motors.
+*/
+void Motors::shutDown()
+{
+	for (int i = 0; i < 4; i++) {
+		channel[i]->powerDown();
 	}
 }
 
@@ -480,7 +452,7 @@ RMCKangaroo::RMCKangaroo(USARTClass &serial)
 	SerialPort = &serial;
 	K = new KangarooSerial(*SerialPort);
 	motors = new Motors(*K, '3');
-	linearActuatorPair = new LinearActuatorPair(*K, '1');
+	//linearActuatorPair = new LinearActuatorPair(*K, '1');
 	auger = new Auger(2, 3);
 	//slider = new Slider(*K, '7');
 	//conveyor = new Conveyor(*K, '8');
@@ -491,7 +463,7 @@ Executes the loop of the right Linear Actuator
 void RMCKangaroo::loop()
 {
 	motors->loop();
-	linearActuatorPair->loop();
+	//linearActuatorPair->loop();
 	//slider->loop();
 	//conveyor->loop();
 }
@@ -506,7 +478,7 @@ void RMCKangaroo::begin() {
 //	Serial.print("Error");
 	//SerialPort->listen();
 	motors->begin();
-	linearActuatorPair->begin();
+	//linearActuatorPair->begin();
 	//slider->begin();
 	//conveyor->begin();
 }

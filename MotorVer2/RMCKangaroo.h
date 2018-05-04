@@ -121,22 +121,17 @@ public:
 	Motors(KangarooSerial & K, char name);
 	void setSpeedLimit(int newSpeed);
 	void drive(long drive, long turn);
+	void shutDown();
 	//void setTurn(long turn);
 	void tankDrive(long leftSpeed, long rightSpeed);
 	void setAngle(long angle);
 	void clearAngle();
 	void loop();
 	void begin();
-	long getLeftMotorS();
-	long getRightMotorS();
-	long getFrRightMotorS(); 
-	long getFrLeftMotorS(); 
-	long getReLeftMotorS(); 
-	long getReRightMotorS(); 
- 	long getMotorSpeedS(); //Might be wrong cuz of pointer
 	void setPos(long pos);
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
+	char currentSpeeds[5];
 
 	//Specify the links and initial tuning parameters
 	double Kp = 0, Ki = 0, Kd = 0;
