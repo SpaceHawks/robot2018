@@ -102,14 +102,24 @@ LinearActuatorPair::LinearActuatorPair(KangarooSerial & K, char name)
 /*!
 \
 */
-long * LinearActuatorPair::getCurrentVal()
+char * LinearActuatorPair::getCurrentVal()
 {
-	return nullptr;
+	static char valList[3];
+	valList[0] = getPos();
+	valList[1] = getSpeed();
+	valList[2] = -valList[0] - valList[1];
+	return valList;
 }
 long LinearActuatorPair::getPos()
 {
 	return map(channel[0]->status.value(), channel[0]->min, channel[0]->max, 0, 100);
 }
+
+long LinearActuatorPair::getSpeed()
+{
+	return speed;
+}
+
 /*!
 \
 */
@@ -135,6 +145,7 @@ void LinearActuatorPair::setTargetPosAndSpeed(long pos, long speed)
 	setTargetPos(pos);
 	setSpeed(speed);
 }
+
 
 /*!
 Computes gap between Linear Actuators and fixes it if greater than tolerance.
@@ -223,7 +234,6 @@ void Motor::loop()
 	{
 		s(tempSpeed);
 		lastSpeed = tempSpeed;
-
 	}
 	status = getS();
 }
@@ -234,8 +244,9 @@ void Motor::setTargetSpeed(long speed) {
 }
 long Motor::getCurrentSpeed()
 {
-	return status.value();
+	return map(status.value(), -WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT, WHEEL_MOTOR_MECHANICAL_SPEED_LIMIT, -100, 100);
 }
+
 void Motor::setSpeedLimit(long newSpeed) //speed is percentage
 {
 	if (newSpeed > 0 && newSpeed <= 100) {
@@ -265,6 +276,17 @@ void Motors::setSpeedLimit(int newSpeed) { // speed is percent
 			channel[i]->setSpeedLimit(newSpeed);
 		}
 	}
+}
+
+/*!
+Powers down all whell motors.
+*/
+void Motors::shutDown()
+{
+	for (int i = 0; i < 4; i++) {
+		channel[i]->powerDown();
+	}
+	
 }
 
 void Motors::loop()
@@ -310,6 +332,7 @@ void Motors::loop()
 			channel[i]->setTargetSpeed(0);
 		}
 		channel[i]->loop();
+		currentSpeeds[i] = channel[i]->getCurrentSpeed();
 	}
 }
 void Motors::begin()
@@ -348,14 +371,15 @@ long Motors::getReRightMotorS()
 	return map(-channel[REAR_RIGHT]->status.value(), -(channel[REAR_RIGHT]->speedLimit), channel[REAR_RIGHT]->speedLimit, -100, 100);
 }
 
-long *Motors::getMotorSpeedS()
+void Motors::getMotorSpeedS()
 {
-	static long speedList[4];
-	speedList[0] = getFrRightMotorS();
-	speedList[1] = getFrLeftMotorS();
-	speedList[2] = getReLeftMotorS();
-	speedList[3] = getReRightMotorS();
-	return speedList;
+	//char *speedList = new int[5];
+	currentSpeeds[0] = getFrLeftMotorS();
+	currentSpeeds[1] = getFrRightMotorS();
+	currentSpeeds[2] = -getReRightMotorS();
+	currentSpeeds[3] = -getReLeftMotorS();
+	//speedList[4] = -speedList[0] - speedList[1] - speedList[2] - speedList[3];
+	//return speedList;
 }
 
 void Motors::drive(long drive, long turn)
@@ -488,7 +512,7 @@ Executes the loop of the right Linear Actuator
 void RMCKangaroo::loop()
 {
 	motors->loop();
-	linearActuatorPair->loop();
+//	linearActuatorPair->loop();
 	//linearActuatorPair->loop();
 }
 /*!
@@ -502,6 +526,6 @@ void RMCKangaroo::begin() {
 //	Serial.print("Error");
 	//SerialPort->listen();
 	motors->begin();
-	linearActuatorPair->begin();
+//	linearActuatorPair->begin();
 	//linearActuatorPair->begin();
 }

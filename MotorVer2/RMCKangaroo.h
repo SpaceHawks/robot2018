@@ -19,7 +19,7 @@ public:
 	void loop();
 	void setTargetVal(long val);
 	void setTargetVal(long val1, long val2); //For controlling 2 Kangaroo Channels
-	long *getCurrentVal();
+	char *getCurrentVal();
 private:
 
 };
@@ -65,8 +65,9 @@ public:
 	long lastVal;
 	long lastSpeed;
 	bool isSyncing;
-	long *getCurrentVal();
+	char *getCurrentVal();
 	long getPos();
+	long getSpeed();
 	//void setTargetVal(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
 	void setTargetPos(long pos);
@@ -124,6 +125,7 @@ public:
 	void tankDrive(long leftSpeed, long rightSpeed);
 	void setAngle(long angle);
 	void clearAngle();
+	void shutDown();
 	void loop();
 	void begin();
 	long getLeftMotorS();
@@ -132,11 +134,11 @@ public:
 	long getFrLeftMotorS(); 
 	long getReLeftMotorS(); 
 	long getReRightMotorS(); 
- 	long getMotorSpeedS(); //Might be wrong cuz of pointer
+ 	void getMotorSpeedS(); //Might be wrong cuz of pointer
 	void setPos(long pos);
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
-
+	char currentSpeeds[5];
 	//Specify the links and initial tuning parameters
 	double Kp = 0, Ki = 0, Kd = 0;
 	PID* syncPID;
@@ -173,7 +175,7 @@ public:
 	Motors* motors;
 	LinearActuatorPair* linearActuatorPair;
 	Auger* auger;
-	RMCKangaroo(USARTClass &serialPorta);
+	RMCKangaroo(USARTClass &serialPort);
 	void loop();
 	void begin();
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
