@@ -263,3 +263,5 @@ __pycache__/
 *.vcxproj
 MotorVer2/__vm/Compile.vmps.xml
 *.xml
+*.xml
+*.xml
