@@ -41,6 +41,7 @@ void serialEvent() {
 				{
 				case 10:
 					motorK.motors->setSpeedLimit(value1);
+					motorK.getStatus();
 					break;
 				default:
 					break;
@@ -176,7 +177,7 @@ bool verifyCheckSum(char arrayNum[], int len) {
 		Serial.print("Checksum fails.");
 		for (int i = 0; i < len; i++)
 		{
-			Serial.print(arrayNum[i]);
+			Serial.print("Test"+arrayNum[i]);
 			Serial.print(" ");
 		}
 		Serial.println();

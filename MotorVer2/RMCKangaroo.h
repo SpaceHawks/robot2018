@@ -23,6 +23,9 @@ public:
 	void setTargetVal(long val);
 	void setTargetVal(long val1, long val2); //For controlling 2 Kangaroo Channels
 	long *getCurrentVal();
+	KangarooError errorStatus;
+	void getStatus(KangarooError * output, int startIndex);
+
 private:
 
 };
@@ -78,6 +81,7 @@ public:
 	long speed;
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
+	void getStatus(KangarooError *output, int i);
 
 	//Specify the links and initial tuning parameters
 	double Kp = 0.4, Ki = 0, Kd = 0;
@@ -132,6 +136,7 @@ public:
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
 	char currentSpeeds[5];
+	void getStatus(KangarooError *output, int startIndex);
 
 	//Specify the links and initial tuning parameters
 	double Kp = 0, Ki = 0, Kd = 0;
@@ -156,6 +161,7 @@ class Slider: public LinearActuator {
 public:
 	Slider(KangarooSerial& K, char name);
 };
+
 class Conveyor : public Motor {
 public:
 	Conveyor(KangarooSerial& K, char name);
@@ -184,5 +190,6 @@ public:
 	RMCKangaroo(USARTClass &serialPorta);
 	void loop();
 	void begin();
+	void getStatus();
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
 };

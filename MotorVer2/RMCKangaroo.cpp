@@ -9,8 +9,12 @@ LinearActuator::LinearActuator(KangarooSerial& K, char name):KangarooChannel(K, 
 Initiates the Kangaroo. Gets min and max positions for Linear Actuator.
 */
 void LinearActuator::begin() {
-	start();
-	getExtremes();
+	commandTimeout(500);
+	errorStatus = start();
+	if (errorStatus == KANGAROO_NO_ERROR)
+	{
+		getExtremes();
+	}
 }
 /*!
 Extends Linear Actuator to target position with set speed while in range.
@@ -18,17 +22,20 @@ Powers down when completed.
 */
 void LinearActuator::loop()
 {
-	if (targetVal >= min && targetVal <= max && (targetVal != lastVal || speed != lastSpeed )) {
-		done = false;
-		p(targetVal, speed);
-		lastVal = targetVal;
-		lastSpeed = speed;
-	}
-
-	status = getP();
-	if (status.done()) {
-		powerDown();
-		done = true;
+	if (errorStatus == KANGAROO_NO_ERROR)
+	{
+		if (targetVal >= min && targetVal <= max && (targetVal != lastVal || speed != lastSpeed)) {
+			done = false;
+			p(targetVal, speed);
+			lastVal = targetVal;
+			lastSpeed = speed;
+		}
+		status = getP();
+		errorStatus = status.error();
+		if (status.done()) {
+			powerDown();
+			done = true;
+		}
 	}
 }
 /*!
@@ -198,12 +205,20 @@ void LinearActuatorPair::begin()
 	channel[1]->begin();
 	setSpeed(100);
 }
+void LinearActuatorPair::getStatus(KangarooError *output, int startIndex)
+{
+	for (int i = 0; i < 2; i++)
+	{
+		channel[i]->getStatus(output, startIndex + i);
+	}
+}
 Motor::Motor(KangarooSerial& K, char name) :KangarooChannel(K, name)
 {
 }
 void Motor::begin()
 {
-	start();
+	commandTimeout(500);
+	errorStatus = start();
 	//KangarooError error = start();
 	//Serial.println(error);
 }
@@ -214,17 +229,21 @@ void Motor::setTargetPos(long pos)
 }
 void Motor::loop()
 {
-	long tempSpeed = speed;
-	//Serial.println("tempSpeed "+String(tempSpeed));
-	//Serial.println("lastSpeed " + String(lastSpeed));
-	//Serial.println("speedLimit " + String(speedLimit));
-	if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
+	if (errorStatus == KANGAROO_NO_ERROR)
 	{
-		s(tempSpeed);
-		lastSpeed = tempSpeed;
+		long tempSpeed = speed;
+		//Serial.println("tempSpeed "+String(tempSpeed));
+		//Serial.println("lastSpeed " + String(lastSpeed));
+		//Serial.println("speedLimit " + String(speedLimit));
+		if (tempSpeed != lastSpeed && tempSpeed >= -speedLimit && tempSpeed <= speedLimit)
+		{
+			s(tempSpeed);
+			lastSpeed = tempSpeed;
 
+		}
+		status = getS();
+		errorStatus = status.error();
 	}
-	status = getS();
 }
 void Motor::setTargetSpeed(long speed) {
 	if (speed >= -100 && speed <= 100) {
@@ -368,6 +387,13 @@ void Motors::setPos(long pos)
 	targetPos = pos*2040;
 	alreadySetTargetPos == false;
 }
+void Motors::getStatus(KangarooError *output, int startIndex)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		channel[i]->getStatus(output, startIndex + i);
+	}
+}
 void Motors::setAngle(long angle)
 {
 	if (angle >= -180 && angle <= 180)
@@ -440,7 +466,6 @@ void Auger::stop()
 {
 	digitalWrite(enablePin, LOW);
 	digitalWrite(reversePin, LOW);
-
 }
 
 /*!
@@ -452,10 +477,10 @@ RMCKangaroo::RMCKangaroo(USARTClass &serial)
 	SerialPort = &serial;
 	K = new KangarooSerial(*SerialPort);
 	motors = new Motors(*K, '3');
-	//linearActuatorPair = new LinearActuatorPair(*K, '1');
+	linearActuatorPair = new LinearActuatorPair(*K, '1');
 	auger = new Auger(2, 3);
-	//slider = new Slider(*K, '7');
-	//conveyor = new Conveyor(*K, '8');
+	slider = new Slider(*K, '7');
+	conveyor = new Conveyor(*K, '8');
 }
 /*!
 Executes the loop of the right Linear Actuator
@@ -463,24 +488,50 @@ Executes the loop of the right Linear Actuator
 void RMCKangaroo::loop()
 {
 	motors->loop();
-	//linearActuatorPair->loop();
-	//slider->loop();
-	//conveyor->loop();
+	linearActuatorPair->loop();
+	slider->loop();
+	conveyor->loop();
 }
 /*!
 Initiates Serial Communication.
 Executes begin methods of all Linear Actuators and Motors.
 */
 void RMCKangaroo::begin() {
-	//Serial.println("before");
 	SerialPort->begin(38400);
-	//delay(1000);
-//	Serial.print("Error");
-	//SerialPort->listen();
 	motors->begin();
-	//linearActuatorPair->begin();
-	//slider->begin();
-	//conveyor->begin();
+	linearActuatorPair->begin();
+	slider->begin();
+	conveyor->begin();
+}
+
+void RMCKangaroo::getStatus()
+{
+	KangarooError errorStatuses[8];
+	linearActuatorPair->getStatus(errorStatuses, 0);
+	motors->getStatus(errorStatuses, 2);
+	slider->getStatus(errorStatuses, 6);
+	conveyor->getStatus(errorStatuses, 7);
+
+	for (int i = 0; i < 8; i++)
+	{
+		Serial.print(errorStatuses[i]);
+		if (errorStatuses[i] == KANGAROO_NO_ERROR)
+			Serial.print("No_error ");
+		else if (errorStatuses[i] == KANGAROO_NOT_STARTED)
+			Serial.print("Not_Started ");
+		else if (errorStatuses[i] == KANGAROO_NOT_HOMED)
+			Serial.print("Not_homed ");
+		else if (errorStatuses[i] == KANGAROO_CONTROL_ERROR)
+			Serial.print("Control_error ");
+		else if (errorStatuses[i] == KANGAROO_WRONG_MODE)
+			Serial.print("Wrong_mode ");
+		else if (errorStatuses[i] == KANGAROO_SERIAL_TIMEOUT)
+			Serial.print("Serial_timeout ");
+		else if (errorStatuses[i] == KANGAROO_TIMED_OUT)
+			Serial.print("Command_timeout ");
+		Serial.print(" ");
+	}
+	Serial.println();
 }
 
 Slider::Slider(KangarooSerial & K, char name): LinearActuator(K, name)
@@ -498,4 +549,9 @@ void Conveyor::setSpeedLimit(long newSpeed)
 	if (newSpeed > 0 && newSpeed <= 100) {
 		speedLimit = map(newSpeed, 0, 100, 0, CONVEYOR_MOTOR_MECHANICAL_SPEED_LIMIT);
 	}
+}
+
+void Actuator::getStatus(KangarooError * output, int startIndex)
+{
+	output[startIndex] = errorStatus;
 }
