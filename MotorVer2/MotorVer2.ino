@@ -177,7 +177,11 @@ bool verifyCheckSum(char arrayNum[], int len) {
 		Serial.print("Checksum fails.");
 		for (int i = 0; i < len; i++)
 		{
+<<<<<<< HEAD
 			Serial.print("Test" + arrayNum[i]);
+=======
+			Serial.print("Test"+arrayNum[i]);
+>>>>>>> 213d2ee028f1080bac0e98bc4b1f4341c0416fad
 			Serial.print(" ");
 		}
 		Serial.println();
