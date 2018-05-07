@@ -23,6 +23,9 @@ public:
 	void setTargetVal(long val);
 	void setTargetVal(long val1, long val2); //For controlling 2 Kangaroo Channels
 	long *getCurrentVal();
+	KangarooError errorStatus;
+	void getStatus(KangarooError * output, int startIndex);
+
 private:
 
 };
@@ -44,12 +47,12 @@ public:
 	long lastVal;
 	long getCurrentVal();
 	bool done = false;
-//	void setSpeed(long speed);
+	//	void setSpeed(long speed);
 	void getExtremes();
 	void setTargetPosDirect(long pos);
 	void setTargetPosAndSpeed(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
-	void setTargetPos(long pos );
+	void setTargetPos(long pos);
 	void loop();
 	KangarooStatus status;
 	void begin();
@@ -59,7 +62,7 @@ public:
 \class LinearActuatorPair
 \brief  This class controls two Linear Actuator synchronously.
 */
-class LinearActuatorPair{
+class LinearActuatorPair {
 public:
 	LinearActuatorPair(KangarooSerial& K, char name);
 	LinearActuator* channel[2];
@@ -78,6 +81,7 @@ public:
 	long speed;
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
+	void getStatus(KangarooError *output, int i);
 
 	//Specify the links and initial tuning parameters
 	double Kp = 0.4, Ki = 0, Kd = 0;
@@ -107,7 +111,7 @@ public:
 	void setTargetPos(long pos);
 };
 
-class Motors{
+class Motors {
 public:
 	//long drive = 101;
 	long leftSpeed = 0;
@@ -121,22 +125,18 @@ public:
 	Motors(KangarooSerial & K, char name);
 	void setSpeedLimit(int newSpeed);
 	void drive(long drive, long turn);
+	void shutDown();
 	//void setTurn(long turn);
 	void tankDrive(long leftSpeed, long rightSpeed);
 	void setAngle(long angle);
 	void clearAngle();
 	void loop();
 	void begin();
-	long getLeftMotorS();
-	long getRightMotorS();
-	long getFrRightMotorS(); 
-	long getFrLeftMotorS(); 
-	long getReLeftMotorS(); 
-	long getReRightMotorS(); 
- 	long getMotorSpeedS(); //Might be wrong cuz of pointer
 	void setPos(long pos);
 	//Define Variables we'll be connecting to
 	double Setpoint, Input, Output;
+	char currentSpeeds[5];
+	void getStatus(KangarooError *output, int startIndex);
 
 	//Specify the links and initial tuning parameters
 	double Kp = 0, Ki = 0, Kd = 0;
@@ -157,10 +157,11 @@ public:
 	void stop();
 };
 
-class Slider: public LinearActuator {
+class Slider : public LinearActuator {
 public:
 	Slider(KangarooSerial& K, char name);
 };
+
 class Conveyor : public Motor {
 public:
 	Conveyor(KangarooSerial& K, char name);
@@ -179,7 +180,7 @@ protected:
 	KangarooSerial* K;
 	String channelList;
 	String channelType;
-	
+
 public:
 	Motors* motors;
 	LinearActuatorPair* linearActuatorPair;
@@ -189,5 +190,6 @@ public:
 	RMCKangaroo(USARTClass &serialPorta);
 	void loop();
 	void begin();
+	void getStatus();
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
 };
