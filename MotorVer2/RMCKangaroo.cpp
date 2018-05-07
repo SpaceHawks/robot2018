@@ -502,39 +502,6 @@ void RMCKangaroo::begin() {
 	linearActuatorPair->begin();
 	slider->begin();
 	conveyor->begin();
-<<<<<<< HEAD
-=======
-}
-
-void RMCKangaroo::getStatus()
-{
-	KangarooError errorStatuses[8];
-	linearActuatorPair->getStatus(errorStatuses, 0);
-	motors->getStatus(errorStatuses, 2);
-	slider->getStatus(errorStatuses, 6);
-	conveyor->getStatus(errorStatuses, 7);
-
-	for (int i = 0; i < 8; i++)
-	{
-		Serial.print(errorStatuses[i]);
-		if (errorStatuses[i] == KANGAROO_NO_ERROR)
-			Serial.print("No_error ");
-		else if (errorStatuses[i] == KANGAROO_NOT_STARTED)
-			Serial.print("Not_Started ");
-		else if (errorStatuses[i] == KANGAROO_NOT_HOMED)
-			Serial.print("Not_homed ");
-		else if (errorStatuses[i] == KANGAROO_CONTROL_ERROR)
-			Serial.print("Control_error ");
-		else if (errorStatuses[i] == KANGAROO_WRONG_MODE)
-			Serial.print("Wrong_mode ");
-		else if (errorStatuses[i] == KANGAROO_SERIAL_TIMEOUT)
-			Serial.print("Serial_timeout ");
-		else if (errorStatuses[i] == KANGAROO_TIMED_OUT)
-			Serial.print("Command_timeout ");
-		Serial.print(" ");
-	}
-	Serial.println();
->>>>>>> 213d2ee028f1080bac0e98bc4b1f4341c0416fad
 }
 
 void RMCKangaroo::getStatus()
@@ -587,8 +554,4 @@ void Conveyor::setSpeedLimit(long newSpeed)
 void Actuator::getStatus(KangarooError * output, int startIndex)
 {
 	output[startIndex] = errorStatus;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 213d2ee028f1080bac0e98bc4b1f4341c0416fad
