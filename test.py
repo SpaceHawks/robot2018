@@ -1,30 +1,35 @@
-from lidar_tools import RMCLidar
+from arduino import Task
+from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
-import lidar_tools, platform
+i = 0
+def setFunction(value1, value2):
+    print("setFunction", value1, value2)
 
-print("Running lidarTest.py")
-app = pg.QtGui.QApplication([""])
-ui = lidar_tools.LidarGUI()
-mw = pg.QtGui.QMainWindow()
-mw.showMaximized()
-view = pg.GraphicsLayoutWidget()  ## GraphicsView with GraphicsLayout inserted by default
-mw.setCentralWidget(view)
-ui = lidar_tools.LidarGUI()
-ui.setupUI(view)
-# ui.buttonConnectDisconnect.clicked.connect(connectDisconnect)
-mw.show()
-if platform.system() == "Darwin":
-    port = '/dev/tty.SLAB_USBtoUART'
-else:
-    port = '/dev/ttyUSB0'
-lidar = RMCLidar(port, ui)
-timer = pg.QtCore.QTimer()
-timer.timeout.connect(lidar.update)
-lidar.lidarStarted.connect(lambda : timer.start(10))
-lidar.lidarStopped.connect(timer.stop)
+def getFunction():
+    global i
+    print(i)
+    i +=1
+    return i
+def stopFunction():
+    print("stop function called")
+
+
+app = QtGui.QApplication([""])
+timer = QtCore.QTimer()
+t = Task(setFunction, (30,3), getFunction, stopFunction, 3000)
+t1 = Task(setFunction, (20,3), getFunction, stopFunction, 3000)
+t.abandoned.connect(lambda: print("t abandoned"))
+t.completed.connect(lambda: print("t compleed"))
+t.timeout.connect(lambda: print("t timeout"))
+t.notMoving.connect(lambda: print("t not moving"))
+
+t1.abandoned.connect(lambda: print("t1 abandoned"))
+t1.completed.connect(lambda: print("t1 compleed"))
+t1.timeout.connect(lambda: print("t1 timeout"))
+t1.notMoving.connect(lambda: print("t1 not moving"))
+
+timer.singleShot(1000, t.execute)
+timer.singleShot(1000, t1.execute)
 pg.QtGui.QApplication.exec_()
 
-# self.lidar = RPLidar()
-# self.lidar = RPLidar('/dev/ttyUSB0')
-# if lidar.init():
-#     lidar.update()
+

@@ -3,6 +3,9 @@
 """
 from serial import Serial
 from pyqtgraph.Qt import QtGui, QtCore# (the example applies equally well to PySide)
+# import ASUS.GPIO as GPIO
+import time
+
 
 class Arduino():
     """
@@ -11,6 +14,10 @@ class Arduino():
     def __init__(self, serialPort):
         self.serialPort = Serial(serialPort, baudrate=115200, timeout=3.0)
         self.lastMessage = None
+        self.resetPin = 22
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setwarnings(False)
+        GPIO.setup(self.resetPin, GPIO.OUT)
 
     def write(self, message, forced = False):
         message.append((256 - sum(message)) % 256)
@@ -21,8 +28,22 @@ class Arduino():
             self.serialPort.write(message)
             self.lastMessage = message
 
-    def read(self, numBytes):
-        return None
+    def read(self, size):
+        while self.serialPort.in_waiting >= size + 1:
+            data = self.serialPort.read(size + 1)
+            if sum(data) % 256 == 0:#checksum verified
+                return data[:size]
+            else:
+                print("failed checksum")
+                return None
+        else:
+            return None
+
+    def request(self, device):
+        self.write([3, device, 0, 0], forced=True)
+
+    def requestWheelSpeed(self):
+        self.request(10)
 
     def motor(self, device, value1, value2, forced=False):
         if value1 < 0: value1 += 256
@@ -39,6 +60,9 @@ class Arduino():
         if usingTail:
             leftSpeed, rightSpeed = -rightSpeed, -leftSpeed
         self.motor(11, leftSpeed, rightSpeed, forced=forced)
+
+    def shutDownWheels(self, forced=False, usingTail=False):
+        self.motor(12, 0, 0, forced=forced)
 
     def stop(self):
         self.drive(0, 0, forced=True)
@@ -80,6 +104,17 @@ class Arduino():
     def tilterStop(self):
         pass
 
+    def sliderPosAndSpeed(self, pos, speed, forced=False):
+        self.motor(7, pos, speed, forced=forced)
+
+    def sliderStop(self):
+        pass
+
+    def reset(self):
+        GPIO.output(self.resetPin,GPIO.LOW)
+        time.sleep(.05)
+        GPIO.output(self.resetPin,GPIO.HIGH)
+
 class FakeArduino():
     """
     An interface with Arduino, which is attached to the RPi by the serial pins.
@@ -111,6 +146,12 @@ class FakeArduino():
     def tankDrive(self, leftSpeed, rightSpeed, forced = False, usingTail = False):
         print("FakeArduino -> tankDrive(", leftSpeed, rightSpeed, ")")
         return True
+
+    def shutDownWheels(self, forced = False, usingTail = False):
+        print("FakeArduino -> shutDownWheels()")
+        return True
+
+
 
     def stop(self):
         print("FakeArduino -> stop()")
@@ -151,17 +192,52 @@ class FakeArduino():
     def tilterStop(self):
         print("FakeArduino -> tilterStop()")
         return True
-
-class Task():
+    def reset(self):
+        print("FakeArduino -> reset()")
+        return True
+    def requestWheelSpeed(self):
+        print("FakeArduino -> requestWheelSpeed()")
+        return True
+class Task(QtCore.QObject):
     completed = QtCore.pyqtSignal()
     abandoned = QtCore.pyqtSignal()
-    def __init__(self, arduino):
-        self.arduino = arduino
-        self.setSliderPos = None
-        self.setTilterPos = None
+    notMoving = QtCore.pyqtSignal()
+    timeout = QtCore.pyqtSignal()
 
-    def update(self, currentSliderPos, currentTilterPos):
-        if currentSliderPos == self.setSliderPos and currentTilterPos == self.currentTilterPos:
+    def __init__(self, setFunction, params, getFunction, stopFunction, timeout):
+        super(Task, self).__init__()
+        self.setFunction = setFunction
+        self.stopFunction = stopFunction
+        self.params = params
+        self.getFunction = getFunction
+        self.timeoutTimer = QtCore.QTimer()
+        self.timeoutTimer.setInterval(timeout)
+        self.timeoutTimer.setSingleShot(True)
+        self.timeoutTimer.timeout.connect(self.stop)
+
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update)
+        self.lastValue = None
+
+    def update(self):
+        currentValue = self.getFunction()
+        if self.lastValue == None:
+            self.lastValue = currentValue
+        elif self.lastValue == currentValue:
+            self.notMoving.emit()
+        else:
+            pass
+        if abs(currentValue - self.params[0]) < 2:
+            self.timer.stop()
+            self.timeoutTimer.stop()
             self.completed.emit()
+
     def execute(self):
-        self.arduino.tilerPos()
+        self.setFunction(self.params[0], self.params[1])
+        self.timeoutTimer.start()
+        self.timer.start(100)
+
+    def stop(self):
+        self.timer.stop()
+        self.stopFunction()
+        self.timeout.emit()

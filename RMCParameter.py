@@ -1,6 +1,7 @@
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType, parameterTypes
-from pyqtgraph.Qt import QtGui, QtWidgets, QtCore# (the example applies equally well to PySide)
+from pyqtgraph.Qt import QtGui, QtCore# (the example applies equally well to PySide)
 import pyqtgraph as pg
+
 class WheelParameterItem(parameterTypes.WidgetParameterItem):
     emptySignal = QtCore.pyqtSignal()
     def __init__(self, param, depth):
@@ -21,10 +22,13 @@ class WheelParameterItem(parameterTypes.WidgetParameterItem):
         self.setExpanded(self.param.opts.get('expanded', True))
 
     def setValue(self, value):
-        self.frontLeft.setText(str(value[0]))
-        self.frontRight.setText(str(value[1]))
-        self.rearRight.setText(str(value[2]))
-        self.rearLeft.setText(str(value[3]))
+        if value[1] ==10:
+            self.frontLeft.setText(str(value[2]))
+            self.frontRight.setText(str(value[3]))
+        elif value[1] == 20:
+            self.rearLeft.setText(str(value[2]))
+            self.rearRight.setText(str(value[3]))
+
 
     def value(self):
         # output = []
@@ -46,14 +50,14 @@ class WheelParameterItem(parameterTypes.WidgetParameterItem):
 
 
     def makeWidget(self):
-        self.widget = QtWidgets.QWidget()
-        self.layout = QtWidgets.QGridLayout()
+        self.widget = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
         self.widget.setLayout(self.layout)
-        self.frontLeft = QtWidgets.QLabel()
-        self.frontRight = QtWidgets.QLabel()
-        self.rearLeft = QtWidgets.QLabel()
-        self.rearRight = QtWidgets.QLabel()
-        self.frontRight = QtWidgets.QLabel()
+        self.frontLeft = QtGui.QLabel()
+        self.frontRight = QtGui.QLabel()
+        self.rearLeft = QtGui.QLabel()
+        self.rearRight = QtGui.QLabel()
+        self.frontRight = QtGui.QLabel()
         self.frontLeft.setText("Front Left")
         self.frontRight.setText("Front Right")
         self.rearRight.setText("Rear Righ")
@@ -101,22 +105,22 @@ class TilterParameterItem(parameterTypes.WidgetParameterItem):
         return None
 
     def makeWidget(self):
-        self.widget = QtWidgets.QWidget()
-        self.layout = QtWidgets.QGridLayout()
+        self.widget = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
         self.widget.setLayout(self.layout)
         # self.layout.setAlignment(pg.QtCore.Qt.AlignCenter)
 
-        self.leftSlider = QtWidgets.QSlider()
-        self.rightSlider = QtWidgets.QSlider()
-        self.leftSliderLabel = QtWidgets.QLabel()
-        self.rightSliderLabel = QtWidgets.QLabel()
+        self.leftSlider = QtGui.QSlider()
+        self.rightSlider = QtGui.QSlider()
+        self.leftSliderLabel = QtGui.QLabel()
+        self.rightSliderLabel = QtGui.QLabel()
         self.leftSlider.setEnabled(False)
         self.rightSlider.setEnabled(False)
 
         self.leftSliderLabel.setText("Left: ---")
         self.rightSliderLabel.setText("Right: ---")
-        self.lineEditSetPos = QtWidgets.QLineEdit()
-        self.labelSetPos = QtWidgets.QLabel()
+        self.lineEditSetPos = QtGui.QLineEdit()
+        self.labelSetPos = QtGui.QLabel()
         self.labelSetPos.setText("Set Pos: ")
         self.layout.addWidget(self.leftSlider, 1, 1)
         self.layout.addWidget(self.rightSlider, 1, 2)
@@ -174,20 +178,20 @@ class SliderParameterItem(parameterTypes.WidgetParameterItem):
         return None
 
     def makeWidget(self):
-        self.widget = QtWidgets.QWidget()
-        self.layout = QtWidgets.QGridLayout()
+        self.widget = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
         self.widget.setLayout(self.layout)
         # self.layout.setAlignment(pg.QtCore.Qt.AlignCenter)
 
-        self.slider = QtWidgets.QSlider()
+        self.slider = QtGui.QSlider()
         self.slider.setOrientation(QtCore.Qt.Horizontal)
         self.slider.setEnabled(False)
 
-        self.posLabel = QtWidgets.QLabel()
+        self.posLabel = QtGui.QLabel()
         self.posLabel.setText("Curr Pos: ---")
 
-        self.lineEditSetPos = QtWidgets.QLineEdit()
-        self.labelSetPos = QtWidgets.QLabel()
+        self.lineEditSetPos = QtGui.QLineEdit()
+        self.labelSetPos = QtGui.QLabel()
         self.labelSetPos.setText("Set Pos: ")
 
         self.layout.addWidget(self.posLabel, 1, 1)
@@ -244,14 +248,14 @@ class AugerParameterItem(parameterTypes.WidgetParameterItem):
         return None
 
     def makeWidget(self):
-        self.widget = QtWidgets.QWidget()
-        self.layout = QtWidgets.QGridLayout()
+        self.widget = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
         self.widget.setLayout(self.layout)
         # self.layout.setAlignment(pg.QtCore.Qt.AlignCenter)
 
-        self.buttonForward = QtWidgets.QPushButton("Forward")
-        self.buttonStop = QtWidgets.QPushButton("Stop")
-        self.buttonReverse = QtWidgets.QPushButton("Reversed")
+        self.buttonForward = QtGui.QPushButton("Forward")
+        self.buttonStop = QtGui.QPushButton("Stop")
+        self.buttonReverse = QtGui.QPushButton("Reversed")
 
         self.layout.addWidget(self.buttonForward, 1, 3)
         self.layout.addWidget(self.buttonStop, 1, 2)

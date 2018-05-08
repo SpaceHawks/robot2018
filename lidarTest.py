@@ -6,6 +6,7 @@ from PID import PID
 from lidar_tools import RMCRpLidar, LidarGUI, RMCHokuyoLidar
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
+# import ASUS.GPIO as GPIO
 
 gear = [20, 40, 60, 80, 100]
 gearIndex = 0
@@ -16,13 +17,17 @@ stillAliveTimer = QtCore.QTimer()
 xboxTimer = QtCore.QTimer()
 distanceSensorsTimer = QtCore.QTimer()
 lidarTimer = QtCore.QTimer()
+#CHANGE 3
+rockLidarTimer = QtCore.QTimer()
+
 goToTimer = QtCore.QTimer()
-correctOrientationTimer = QtCore.QTimer()
+feedbackTimer = QtCore.QTimer()
 
 ui = None
 mw = None
 
 lidar = None
+rock_lidar = None
 
 turn = 0
 drive = 0
@@ -35,16 +40,21 @@ distanceSensors = None
 shutdownPins = [29, 31]
 server = None
 PIDs = [None]*2
-PIDs[0] = PID(0.2, 0, 0)
-PIDs[1] = PID(0.2, 0, 0)
+PIDs[0] = PID(0.1, 0.109, 0.00005)
+PIDs[1] = PID(0.1, 0.109, 0.00005)
 
-orientatinPID = PID(1, 0, 0)
-goToPID = PID(0.2, 0.15, 0.03)
+orientatinPID = PID(2, 0.1, 0)
+goToPID = PID(0.015, 1.55, 0)
+spinPID = PID(2, 0, 0)
 
 orientatinPID.SetPoint = 0
 orientatinPID.setSampleTime(0.2)
+
 goToPID.SetPoint = 0
 goToPID.setSampleTime(0.2)
+
+spinPID.SetPoint = 0
+spinPID.setSampleTime(0.2)
 
 maxAngleWhenMoving = 30
 maxAngle = 5 #deegrees
@@ -64,6 +74,15 @@ zeroDistanceParam = None
 maxTurnParam = None
 maxDriveParam = None
 arduinoSpeedLimitParam = None
+
+stillAliveTimerParam = None
+xboxTimerPar = None
+distanceSensorsTimerParam = None
+lidarTimerPara = None
+goToTimerPara = None
+feedbackTimerParam = None
+
+
 exceedAngleLimit = None
 #PID tunings
 
@@ -72,7 +91,30 @@ tilterParam = None
 sliderParam = None
 augerParam = None
 
+currentLeftDistanceParam = None
+currentRightDistanceParam = None
 
+
+#Feedback from motor driving system
+def arduinoFeedback():
+    global arduino, feedbackTimer, ui, wheelsParam
+    arduino.requestWheelSpeed()
+    data = arduino.read(4)
+    while data is not None:
+        speeds = [0]*4
+        for i in range(len(data)):
+            if data[i]>126 and data[i]<257:
+                speeds[i] = data[i] - 256
+            else:
+                speeds[i] = data[i]
+        if data[0] == 3:#pos feedback
+            if data[1] == 10 or data[1] == 20: #front wheels speed
+                wheelsParam.setValue(speeds)
+            elif data[1] == 5:# la pair
+                pass
+        data = arduino.read(4)
+    # tilterParam.setValue([0,0])
+    # sliderParam.setValue(80)
 
 #xbox 360
 def initXbox360():
@@ -81,7 +123,7 @@ def initXbox360():
         xboxController = Xbox360(arduino)
     if xboxController.init() == True:
         xboxTimer.timeout.connect(xboxController.update)
-        xboxTimer.start(1)
+        xboxTimer.start()
         ui.statusBar.setText("Connected to Xbox controller.")
         ui.statusBar.setStyleSheet('color: green')
         return True
@@ -91,7 +133,7 @@ def initXbox360():
         xboxController = None
         return False
 
-def destroyXbox360():
+def quitXbox360():
     global xboxController, xboxTimer
     if xboxTimer.isActive() and xboxController is not None:
         xboxTimer.timeout.disconnect(xboxController.update)
@@ -106,10 +148,12 @@ def destroyXbox360():
 
 #distance sensor
 def updateDistance():
-    global distanceSensors, PIDs
+    global distanceSensors, PIDs, ui, currentTarget, currentLeftDistanceParam, currentRightDistanceParam
     drives = [None]*2 # left and right
     distanceSensors.update()
     dists = [distanceSensors.distances[0], distanceSensors.distances[1]] #left and right
+    currentLeftDistanceParam.setValue(dists[0])
+    currentRightDistanceParam.setValue(dists[1])
     for i in range(2):
         if dists[i] > 8000:
             pass
@@ -126,16 +170,20 @@ def updateDistance():
                 drives[i] = 100
             if drives[i] < -100:
                 drives[i] = -100
-            drives[i] = - drives[i]
+            drives[i] = drives[i]
         else:
             print("updateDistance: Got unexpected distance", i, ":", dists[i])
     if drives[0] is not None and drives[1] is not None:
         arduino.tankDrive(drives[0], drives[1])
     else:
         arduino.stop()
-    if abs(dists[0] - PIDs[0].SetPoint) < 10 and abs(dists[1] - PIDs[1].SetPoint) < 10:
-        print("updateDistance: Arrived", "left dist: ", dists[0], "right dist: ", dists[1], "SetPoint: ", PIDs[0].SetPoint)
+    if abs(dists[0] - PIDs[0].SetPoint) < 5 and abs(dists[1] - PIDs[1].SetPoint) < 5:
+        message = "updateDistance: Arrived" + "left dist: " + str(dists[0]) + "right dist: " + str(dists[1]) + "SetPoint: " + str(PIDs[0].SetPoint)
+        ui.statusBar.setText(message)
+        ui.statusBar.setStyleSheet('color: red')
         stopSafeDistance()
+        # ui.arenaWidget.arrive()
+        #currentTarget = None
 
 def initDistanceSensors():
     global shutdownPins, distanceSensors, PIDs, safeDistaces, distanceSensorsTimer
@@ -177,12 +225,15 @@ def _setDistance(newDistance):
         ui.statusBar.setText("Set distance is out of range: " + str(newDistance) + "Only [50, 1000] is accepted!")
         ui.statusBar.setStyleSheet('color: red')
 
-def startSafeDistance():
-    global distanceSensors, distanceSensorsTimer, shutdownPins
+def startSafeDistance(distance = None):
+    if distance is not None:
+        _setDistance(distance)
+    global distanceSensors, distanceSensorsTimer, shutdownPins, arduino
     if distanceSensors == None:
         initDistanceSensors()
     if not distanceSensorsTimer.isActive():
-        distanceSensorsTimer.start(20)
+        arduino.setSpeedLimit(15)
+        distanceSensorsTimer.start()
         ui.statusBar.setText("Self-alignment started")
         ui.statusBar.setStyleSheet('color: green')
     else:
@@ -194,15 +245,17 @@ def stopSafeDistance():
     if distanceSensorsTimer.isActive():
         distanceSensorsTimer.stop()
         arduino.stop()
+        arduino.setSpeedLimit(20)
         ui.statusBar.setText("Stopped Self-alignment")
         ui.statusBar.setStyleSheet('color: orange')
 #lidar gui
 def initLidarGui():
-    global app, ui, mw, haha, tilterPosParam, tilterSpeedParam, zeroAngleParam, maxAngleParam, zeroDistanceParam, maxTurnParam, maxDriveParam, arduinoSpeedLimitParam, wheelsParam, tilterParam, sliderParam, augerParam
+    global app, ui, mw, haha, tilterPosParam, tilterSpeedParam, zeroAngleParam, maxAngleParam, zeroDistanceParam, maxTurnParam, maxDriveParam, arduinoSpeedLimitParam, wheelsParam, tilterParam, sliderParam, augerParam, currentLeftDistanceParam, currentRightDistanceParam, feedbackTimer
     ui = LidarGUI()
     ui.params.param('Commands', 'XBox Controller On').sigActivated.connect(initXbox360)
-    ui.params.param('Commands', 'XBox Controller Off').sigActivated.connect(destroyXbox360)
+    ui.params.param('Commands', 'XBox Controller Off').sigActivated.connect(quitXbox360)
     ui.params.param('Commands', 'Emergency Stop').sigActivated.connect(emergencyStop)
+    ui.params.param('Commands', 'Get Path').sigActivated.connect(getPath)
     arduinoSpeedLimitParam = ui.params.param('Arduino Settings', 'Speed Limit')
     arduinoSpeedLimitParam.sigValueChanged.connect(lambda param: arduino.setSpeedLimit(param.value()))
     ui.setWindowTitle("RMC LIDAR Testing Sofware")
@@ -224,20 +277,46 @@ def initLidarGui():
     maxTurnParam = ui.params.param('Distance PID', 'Max Turn')
     maxDriveParam = ui.params.param('Distance PID', 'Max Drive')
 
+    ui.params.param('Spin PID', 'Kp').sigValueChanged.connect(lambda param: spinPID.setKp(param.value()))
+    ui.params.param('Spin PID', 'Ki').sigValueChanged.connect(lambda param: spinPID.setKi(param.value()))
+    ui.params.param('Spin PID', 'Kd').sigValueChanged.connect(lambda param: spinPID.setKd(param.value()))
+    ui.params.param('Spin PID', 'Sample Time').sigValueChanged.connect(
+        lambda param: spinPID.setSampleTime(param.value()))
+
     ui.params.param('Self-Alignment PID', 'Kp').sigValueChanged.connect(lambda param: (PIDs[0].setKp(param.value()), (PIDs[1].setKp(param.value()))))
     ui.params.param('Self-Alignment PID', 'Ki').sigValueChanged.connect(lambda param: (PIDs[0].setKi(param.value()), (PIDs[1].setKi(param.value()))))
     ui.params.param('Self-Alignment PID', 'Kd').sigValueChanged.connect(lambda param: (PIDs[0].setKd(param.value()), (PIDs[1].setKd(param.value()))))
     ui.params.param('Self-Alignment PID', 'Sample Time').sigValueChanged.connect(lambda param: (PIDs[0].setSampleTime(param.value()), (PIDs[1].setSampleTime(param.value()))))
     ui.params.param('Self-Alignment PID', 'Set Distance').sigValueChanged.connect(lambda param: _setDistance(param.value()))
+    currentLeftDistanceParam = ui.params.param('Self-Alignment PID', 'Current Left Distance')
+    currentRightDistanceParam = ui.params.param('Self-Alignment PID', 'Current Right Distance')
     ui.params.param('Self-Alignment PID', 'Start').sigActivated.connect(startSafeDistance)
     ui.params.param('Self-Alignment PID', 'Stop').sigActivated.connect(stopSafeDistance)
 
-    ui.params.param('Timers', 'stillAliveTimer').sigValueChanged.connect(lambda param: stillAliveTimer.setInterval(param.value()))
-    ui.params.param('Timers', 'xboxTimer').sigValueChanged.connect(lambda param: xboxTimer.setInterval(param.value()))
-    ui.params.param('Timers', 'distanceSensorsTimer').sigValueChanged.connect(lambda param: distanceSensorsTimer.setInterval(param.value()))
-    ui.params.param('Timers', 'lidarTimer').sigValueChanged.connect(lambda param: lidarTimer.setInterval(param.value()))
-    ui.params.param('Timers', 'goToTimer').sigValueChanged.connect(lambda param: goToTimer.setInterval(param.value()))
-    ui.params.param('Timers', 'correctOrientationTimer').sigValueChanged.connect(lambda param: correctOrientationTimer.setInterval(param.value()))
+
+    #timers
+    stillAliveTimerParam = ui.params.param('Timers', 'stillAliveTimer')
+    xboxTimerParam = ui.params.param('Timers', 'xboxTimer')
+    distanceSensorsTimerParam = ui.params.param('Timers', 'distanceSensorsTimer')
+    lidarTimerParam = ui.params.param('Timers', 'lidarTimer')
+    goToTimerParam = ui.params.param('Timers', 'goToTimer')
+    feedbackTimerParam= ui.params.param('Timers', 'feedbackTimer')
+
+    stillAliveTimerParam.sigValueChanged.connect(lambda param: stillAliveTimer.setInterval(param.value()))
+    xboxTimerParam.sigValueChanged.connect(lambda param: xboxTimer.setInterval(param.value()))
+    distanceSensorsTimerParam.sigValueChanged.connect(lambda param: distanceSensorsTimer.setInterval(param.value()))
+    lidarTimerParam.sigValueChanged.connect(lambda param: lidarTimer.setInterval(param.value()))
+    goToTimerParam.sigValueChanged.connect(lambda param: goToTimer.setInterval(param.value()))
+    feedbackTimerParam.sigValueChanged.connect(lambda param: feedbackTimer.setInterval(param.value()))
+
+    stillAliveTimerParam.setValue(500)
+    xboxTimerParam.setValue(1)
+    distanceSensorsTimerParam.setValue(200)
+    lidarTimerParam.setValue(10)
+    goToTimerParam.setValue(10)
+    feedbackTimerParam.setValue(100)
+
+
     tilterPosParam = ui.params.param('Mining Controls', 'Tilter Position')
     tilterSpeedParam = ui.params.param('Mining Controls', 'Tilter Speed')
     tilterPosParam.sigValueChanged.connect(lambda param: arduino.tilterPosAndSpeed(tilterPosParam.value(), tilterSpeedParam.value()))
@@ -251,26 +330,33 @@ def initLidarGui():
     tilterParam = ui.params.param('Arduino Settings', 'Tilter Position')
     sliderParam = ui.params.param('Arduino Settings', 'Slider Position')
     augerParam = ui.params.param('Arduino Settings', 'Auger')
+    ui.params.param('Arduino Settings', 'Reset').sigActivated.connect(arduino.reset)
+    ui.params.param('Arduino Settings', 'Shutdown Motors').sigActivated.connect(arduino.shutDownWheels)
 
-    wheelsParam.setValue([1, 2, 3, 4])
-    tilterParam.setValue([50,60])
-    sliderParam.setValue(80)
+    augerParam.sigForwardClicked.connect(arduino.augerForward)
+    augerParam.sigReverseClicked.connect(arduino.augerReverse)
+    augerParam.sigStopClicked.connect(arduino.augerStop)
 
-    augerParam.sigForwardClicked.connect(lambda: print("forward"))
-    augerParam.sigBackwardClicked.connect(lambda: print("backward"))
-    augerParam.sigStopClicked.connect(lambda: print("Auger stop"))
-
-    tilterParam.sigChanged.connect(lambda value: print(value))
+    tilterParam.sigChanged.connect(lambda value: arduino.tilterPosAndSpeed(value,100))
     sliderParam.sigChanged.connect(lambda value: print(value))
-
-
-    #draw rocks
-    # ui.arenaWidget.drawRock((20,20))
-    # ui.arenaWidget.clearRock()
-
 
     ui.showMaximized()
     ui.show()
+
+#CHANGE 1
+def initRpLidar():
+    global rockLidarTimer, ui, goToTimer, rock_lidar, lidar
+    if platform.system() == "Darwin":
+        port = '/dev/tty.SLAB_USBtoUART'
+    elif platform.system() == "Linux":
+        port = '/dev/ttyUSB0'
+    else:
+        port = 'COM3'
+    rock_lidar = RMCRpLidar(port, ui)
+    rock_lidar._setHokuyoLidar(lidar)
+    rock_lidar.lidarStarted.connect(lambda: rockLidarTimer.start())
+    rock_lidar.lidarStopped.connect(rockLidarTimer.stop)
+    rockLidarTimer.timeout.connect(rock_lidar.detectRocks)
 
 def initLidar():
     global lidar, lidarTimer, ui, goToTimer
@@ -280,18 +366,14 @@ def initLidar():
         port = '/dev/ttyUSB0'
     else:
         port = 'COM3'
-    # lidar = RMCHokuyoLidar(ui)
-    lidar = RMCRpLidar(port, ui)
-    correctOrientationTimer.timeout.connect(correctOrientation)
-    lidar.lidarStarted.connect(lambda: lidarTimer.start(10))
-    # lidar.lidarStarted.connect(goTo)
+    lidar = RMCHokuyoLidar(ui)
+    lidar.lidarStarted.connect(lambda: lidarTimer.start())
     lidar.lidarStopped.connect(lidarTimer.stop)
     lidar.lidarStopped.connect(goToTimer.stop)
     lidar.lidarStopped.connect(arduino.stop)
     lidarTimer.timeout.connect(lidar.update)
-    ui.arenaWidget.pathAdded.connect(lambda: goToTimer.start(10))
+    ui.arenaWidget.pathAdded.connect(lambda: goToTimer.start())
     ui.arenaWidget.pathCleared.connect(clearCurrentTarget)
-
 
 def clearCurrentTarget():
     global currentTarget, arduino
@@ -306,80 +388,86 @@ def initArduino():
     else:
         arduino = Arduino("/dev/ttyS1")
 
-#self moving
-# def goTo():
-#     if goToTimer.isActive():
-#         goToTimer.stop()
-#     goToTimer.start()
-
-def correctOrientation():
-    global arduino, lidar, ui
-    if lidar.newPos:
-        angleDiff = lidar.angleDiffTo(currentTarget)
-        ui.labelAngleError.setText("Angle Error: "+str(int(angleDiff)) + " degrees")
-        if abs(angleDiff) > maxAngle: #correct it
-            orientatinPID.update(angleDiff)
-            speed = orientatinPID.output
-            if speed > speedLimit: speed = speedLimit
-            if speed < -speedLimit: speed = -speedLimit
-            if speed > 0:
-                arduino.left(int(speed))
-                ui.labelStatus.setText("Left: " + str(int(speed)))
-                pass
-            else:
-                arduino.right(int(-speed))
-                ui.labelStatus.setText("Right: " + str(int(-speed)))
-                pass
-        else: #it's ready
-            pass
-            ui.labelStatus.setText("See target, stop auto orient")
-            correctOrientationTimer.stop()
-            goToTimer.start(10)
-
 def goTo():
-    global arduino, lidar, ui, currentTarget, goToTimer, speedLimit, exceedAngleLimit
+    global arduino, lidar, ui, currentTarget, goToTimer, speedLimit, exceedAngleLimit, spinPID
     if currentTarget == None:
         if not ui.arenaWidget.path.empty():
             coordinate = ui.arenaWidget.path.queue[0]
             coordinateItem = ui.arenaWidget.pathPointItems.queue[0]
             coordinateItem.setBrush(pg.mkBrush('g'))
             currentTarget = (coordinate.x(), coordinate.y())
-            arduinoSpeedLimitParam.setValue(100)
+            arduinoSpeedLimitParam.setValue(15)
         else:
+            arduino.stop()
             goToTimer.stop()
             arduinoSpeedLimitParam.setValue(20)
+    elif currentTarget[0] == 0 and currentTarget[1] == 0: #check for Bin closeliness
+        goToTimer.stop()
+        goToPID.clear()
+        orientatinPID.clear()
+        spinPID.clear()
+        ui.arenaWidget.labelStatus.setText("Self-Alignment activated")
+        arduino.stop()
+        startSafeDistance(distance=100)
     elif lidar.newPos:
-        remainDistance, angleDiff, usingTail = lidar.getDriveParams(currentTarget)
+        nextRemainDistance, angleDiff, usingTail = lidar.getDriveParams(currentTarget)
+        remainDistance = lidar.distanceAlong(ui.arenaWidget.path.queue)
         ui.arenaWidget.labelRemainingDistance.setText("Remaining Distance: "+str(int(remainDistance)) + " mm")
         ui.arenaWidget.labelAngleError.setText("Angle Error: "+str(int(angleDiff)) + " degrees")
-        if remainDistance < zeroDistanceParam.value():#arrived
-            goToPID.clear()
-            orientatinPID.clear()
+        ui.arenaWidget.labelXY.setText("(x,y): "+str(lidar.getXY()))
+        ui.arenaWidget.labelOrientation.setText("Orientation: "+str(lidar.robotOrientation) + " degrees")
+        if nextRemainDistance < zeroDistanceParam.value():#arrived
+            # goToPID.clear()
+            # orientatinPID.clear()
+            # spinPID.clear()
             ui.arenaWidget.labelStatus.setText("Arrived")
             ui.arenaWidget.arrive()
-            arduino.stop()
+            # arduino.stop()
             currentTarget = None
         else: #not arrived yet
-            goToPID.update(remainDistance)
-            orientatinPID.update(angleDiff)
-            drive = -goToPID.output
-            turn = -orientatinPID.output
-            if drive > maxDriveParam.value(): drive = maxDriveParam.value()
-            if drive < -maxDriveParam.value(): drive = -maxDriveParam.value()
-            if turn > maxTurnParam.value(): turn = maxTurnParam.value()
-            if turn < -maxTurnParam.value(): turn = -maxTurnParam.value()
             if abs(angleDiff) > maxAngleParam.value():
                 exceedAngleLimit = True
-                arduino.turn(int(turn))
-            elif abs(angleDiff) > zeroAngleParam.value():
-                if exceedAngleLimit:
-                    arduino.turn(int(turn))
-                else:
-                    arduino.drive(int(drive), int(turn), forced=False, usingTail=usingTail)
-            else: #angle diff is zero
+                goToPID.clear()
+                orientatinPID.clear()
+            elif abs(angleDiff) < zeroAngleParam.value():
                 exceedAngleLimit = False
-                arduino.drive(int(drive), int(turn), forced=False, usingTail=usingTail)
-            ui.arenaWidget.labelStatus.setText("Drive: "+ str(int(drive))+", Turn: "+ str(int(turn)))
+                spinPID.clear()
+            else:
+                pass
+            if exceedAngleLimit: #spin
+                spinPID.update(angleDiff)
+                turn = bound(-spinPID.output, -maxTurnParam.value(), maxTurnParam.value())
+                arduino.turn(turn)
+                ui.arenaWidget.labelStatus.setText("Spin: "+str(turn))
+            else:
+                goToPID.update(remainDistance)
+                orientatinPID.update(angleDiff)
+                drive = bound(-goToPID.output, -maxDriveParam.value(), maxDriveParam.value())
+                turn = bound(-orientatinPID.output, -maxTurnParam.value(), maxTurnParam.value())
+                arduino.drive(drive, turn, forced=False, usingTail=usingTail)
+                ui.arenaWidget.labelStatus.setText("Drive: "+ str(drive)+", Turn: "+ str(turn))
+    else:
+        pass
+from clive import Pathfinding
+def getPath():
+    pathFinder = Pathfinding()
+    #robotPos = lidar.robotPos
+    robotPos = (2000,0)
+    obstacleList = ui.arenaWidget.obstaclesCoord
+    print("robotPos: ", robotPos)
+    print("obstacleList: ", obstacleList)
+    pathFinder.setData(True,robotPos,len(obstacleList),obstacleList)
+    path = [robotPos]
+    path += pathFinder.getData()
+    path.insert(0, (0,robotPos[1]))
+    path.append((6000,path[-1][1]))
+    #path = [(0,0),(100,100),(300,200),(500,700),(900,1000)]
+    ui.arenaWidget.addPaths(path)
+
+def bound(value, lowerLimit, upperimit):
+    if value > upperLimit: return upperLimit
+    elif value < lowerLimit: return lowerLimit
+    else: return int(value)
 
 def keyPressHandler(event):
     global lastKeyDroveMotor
@@ -393,6 +481,14 @@ def keyPressHandler(event):
             arduino.left(20)
         elif key == pg.QtCore.Qt.Key_Right or key == pg.QtCore.Qt.Key_D:
             arduino.right(20)
+        elif key == pg.QtCore.Qt.Key_C:
+            ui.arenaWidget.clearObstacle()
+        elif key == pg.QtCore.Qt.Key_X:
+            ui.arenaWidget.clearPath()
+        elif key == pg.QtCore.Qt.Key_O:
+            ui.arenaWidget.drawingMode = "obstacle"
+        elif key == pg.QtCore.Qt.Key_Escape:
+            ui.arenaWidget.drawingMode = "none"
         lastKeyDroveMotor = key
 
 def keyReleaseHandler(event):
@@ -410,25 +506,29 @@ def keyReleaseHandler(event):
                 arduino.stop()
 
 def emergencyStop():
-    ui.arenaWidget.clearPath()
-    goToTimer.stop()
-    correctOrientationTimer.stop()
-    destroyXbox360()
+    stillAliveTimer.stop()
+    xboxTimer.stop()
     distanceSensorsTimer.stop()
+    lidarTimer.stop()
+    goToTimer.stop()
+    feedbackTimer.stop()
+    ui.arenaWidget.clearPath()
+    quitXbox360()
     arduino.stop()
     ui.statusBar.setText("E-Stop pressed.")
     ui.statusBar.setStyleSheet('color: green')
 
-goToTimer.timeout.connect(goTo)
-correctOrientationTimer.timeout.connect(correctOrientation)
 if __name__ == '__main__':
     print("Running lidarTest.py")
     app = QtGui.QApplication([""])
     initArduino()
     arduino.setSpeedLimit(20)
-    # initXbox360()
     initLidarGui()
     initLidar()
+    initRpLidar()
+    goToTimer.timeout.connect(goTo)
+    feedbackTimer.timeout.connect(arduinoFeedback)
     ui.arenaWidget.keyPressed.connect(keyPressHandler)
     ui.arenaWidget.keyReleased.connect(keyReleaseHandler)
+    # feedbackTimer.start()#miliseconds
     pg.QtGui.QApplication.exec_()
