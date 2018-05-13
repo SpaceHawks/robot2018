@@ -2,7 +2,7 @@
 /*!
 Constructor
 */
-LinearActuator::LinearActuator(KangarooSerial& K, char name):KangarooChannel(K, name)
+LinearActuator::LinearActuator(KangarooSerial& K, char name) :KangarooChannel(K, name)
 {
 }
 /*!
@@ -45,11 +45,12 @@ void LinearActuator::loop()
 	}
 }
 /*!
-Computes min and max values for position of Linear Actuator. 
+Computes min and max values for position of Linear Actuator.
 Sets default max Speed.
 */
 void LinearActuator::getExtremes()
 {
+<<<<<<< HEAD
 		long absMin = getMin().value();
 		long absMax = getMax().value();
 		long safeBound = (absMax - absMin)*0.02;
@@ -57,6 +58,16 @@ void LinearActuator::getExtremes()
 		max = absMax - safeBound;
 		//maxSpeed = 0.5 * (absMax - absMin);
 		Serial.println("max speed is: " + String(maxSpeed));
+=======
+	long absMin = getMin().value();
+	long absMax = getMax().value();
+	long safeBound = (absMax - absMin)*0.02;
+	min = (absMin + safeBound);
+	max = absMax - safeBound;
+	maxSpeed = 208;
+	//maxSpeed = 0.5 * (absMax - absMin);
+	Serial.println("max speed is: " + String(maxSpeed));
+>>>>>>> 8e6471b70e162664ce03b2f2ab0fec9e35182fd9
 }
 /*!
 Sets target position for Linear Actuator between 0 and 100.
@@ -77,7 +88,7 @@ void LinearActuator::setTargetPosAndSpeed(long pos, long newSpeed) { //val = 0% 
 /*!
 Sets target position for Linear Actuator scaled between min and max.
 */
-void LinearActuator::setTargetPos(long pos) { 
+void LinearActuator::setTargetPos(long pos) {
 	if (pos >= 0 && pos <= 100) {
 		targetVal = map(pos, 0, 100, min, max);
 	}
@@ -85,7 +96,7 @@ void LinearActuator::setTargetPos(long pos) {
 /*!
 Sets speed for Linear Actuator scaled between 0 and max speed.
 */
-void LinearActuator::setSpeed(long newSpeed) { 
+void LinearActuator::setSpeed(long newSpeed) {
 	if (newSpeed >= 0 && newSpeed <= 100) {
 		speed = map(newSpeed, 0, 100, 0, maxSpeed);
 	}
@@ -109,7 +120,7 @@ LinearActuatorPair::LinearActuatorPair(KangarooSerial & K, char name)
 	syncPID->SetMode(AUTOMATIC);
 	syncPID->SetOutputLimits(-5, 5);
 	channel[0] = new LinearActuator(K, name);
-	channel[1] = new LinearActuator(K, name+1);
+	channel[1] = new LinearActuator(K, name + 1);
 }
 /*!
 \
@@ -150,7 +161,7 @@ void LinearActuatorPair::setTargetPosAndSpeed(long pos, long speed)
 
 /*!
 Computes gap between Linear Actuators and fixes it if greater than tolerance.
-Moves Linear Actuator Pair to target value controlled by PID. 
+Moves Linear Actuator Pair to target value controlled by PID.
 Executes loops of all channels.
 */
 void LinearActuatorPair::loop()
@@ -165,7 +176,7 @@ void LinearActuatorPair::loop()
 	{
 		long la1 = channel[0]->status.value();
 		long la2 = channel[1]->status.value();
-		Input = la2-la1;
+		Input = la2 - la1;
 		long gap = Input;
 		syncPID->Compute();
 		//Serial.println(String(targetVal)+"     "+String(Output));
@@ -180,10 +191,10 @@ void LinearActuatorPair::loop()
 			channel[1]->setSpeed(speed - Output);
 		}
 		//Serial.println(gap);
-		if (abs(gap) > 25){
+		if (abs(gap) > 25) {
 			if (!isSyncing) {
 				isSyncing = true;
-				
+
 				channel[0]->setTargetPosDirect(la1);
 				channel[1]->setTargetPosDirect(la1);
 			}
@@ -391,7 +402,7 @@ void Motors::clearAngle()
 void Motors::setPos(long pos)
 {
 	mode = 1;
-	targetPos = pos*2040;
+	targetPos = pos * 2040;
 	alreadySetTargetPos == false;
 }
 void Motors::getStatus(KangarooError *output, int startIndex)
@@ -406,7 +417,7 @@ void Motors::setAngle(long angle)
 	if (angle >= -180 && angle <= 180)
 	{
 		mode = 1;
-		this->angle = angle*2040;
+		this->angle = angle * 2040;
 		alreadySetTargetPos == false;
 	}
 }
@@ -541,12 +552,12 @@ void RMCKangaroo::getStatus()
 	Serial.println();
 }
 
-Slider::Slider(KangarooSerial & K, char name): LinearActuator(K, name)
+Slider::Slider(KangarooSerial & K, char name) : LinearActuator(K, name)
 {
 	maxSpeed = SLIDER_MOTOR_MECHANICAL_SPEED_LIMIT;
 }
 
-Conveyor::Conveyor(KangarooSerial & K, char name): Motor(K, name)
+Conveyor::Conveyor(KangarooSerial & K, char name) : Motor(K, name)
 {
 	setSpeedLimit(100);
 }

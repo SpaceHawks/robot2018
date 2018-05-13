@@ -39,6 +39,12 @@ void serialEvent() {
 			case 0:
 				switch (device)
 				{
+				case 1:
+					char *kangarooName = motorK.motors->currentSpeeds;
+					char *errorStatus = motorK.motors->currentSpeeds;
+					sendData(1, 10, kangarooName, errorStatus);
+					sendData(1, 10, kangarooName, errorStatus);
+					break;
 				case 10:
 					motorK.motors->setSpeedLimit(value1);
 					motorK.getStatus();
@@ -129,8 +135,8 @@ void serialEvent() {
 					char *speeds = motorK.motors->currentSpeeds;
 					speeds[FRONT_LEFT] = -speeds[FRONT_LEFT];
 					speeds[FRONT_RIGHT] = -speeds[FRONT_RIGHT];
-					sendData(10, speeds[FRONT_LEFT], speeds[FRONT_RIGHT]);
-					sendData(20, speeds[REAR_LEFT], speeds[REAR_RIGHT]);
+					sendData(3, 10, speeds[FRONT_LEFT], speeds[FRONT_RIGHT]);
+					sendData(3, 20, speeds[REAR_LEFT], speeds[REAR_RIGHT]);
 					break;
 				}
 				default:
@@ -145,8 +151,8 @@ void serialEvent() {
 	}
 }
 
-void sendData(char device, char value1, char value2) {
-	char data[] = { 3, device, value1, value2, 0 };
+void sendData(char  command, char device, char value1, char value2) {
+	char data[] = { command, device, value1, value2, 0 };
 	write(data, 4);
 }
 
@@ -179,6 +185,7 @@ bool verifyCheckSum(char arrayNum[], int len) {
 		Serial.print("Checksum fails.");
 		for (int i = 0; i < len; i++)
 		{
+			Serial.print("Test" + arrayNum[i]);
 			Serial.print("Test"+arrayNum[i]);
 			Serial.print(" ");
 		}
