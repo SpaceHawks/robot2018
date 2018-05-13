@@ -11,6 +11,12 @@ Initiates the Kangaroo. Gets min and max positions for Linear Actuator.
 void LinearActuator::begin() {
 	commandTimeout(500);
 	errorStatus = start();
+	Serial.println(errorStatus);
+	if (errorStatus == KANGAROO_NOT_HOMED)
+	{
+		//home();
+		getExtremes();
+	}
 	if (errorStatus == KANGAROO_NO_ERROR)
 	{
 		getExtremes();
@@ -49,7 +55,6 @@ void LinearActuator::getExtremes()
 		long safeBound = (absMax - absMin)*0.02;
 		min = (absMin + safeBound);
 		max = absMax - safeBound;
-		maxSpeed =208;
 		//maxSpeed = 0.5 * (absMax - absMin);
 		Serial.println("max speed is: " + String(maxSpeed));
 }
@@ -203,6 +208,8 @@ void LinearActuatorPair::begin()
 {
 	channel[0]->begin();
 	channel[1]->begin();
+	channel[0]->maxSpeed = 208;
+	channel[1]->maxSpeed = 208;
 	setSpeed(100);
 }
 void LinearActuatorPair::getStatus(KangarooError *output, int startIndex)
@@ -536,7 +543,7 @@ void RMCKangaroo::getStatus()
 
 Slider::Slider(KangarooSerial & K, char name): LinearActuator(K, name)
 {
-	maxSpeed = 208;
+	maxSpeed = SLIDER_MOTOR_MECHANICAL_SPEED_LIMIT;
 }
 
 Conveyor::Conveyor(KangarooSerial & K, char name): Motor(K, name)

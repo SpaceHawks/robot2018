@@ -68,6 +68,9 @@ void serialEvent() {
 				case 6://linear actuator pair
 					motorK.linearActuatorPair->setTargetPosAndSpeed(value1, value2);
 					break;
+				case 7:// auger on/off reverse/forward
+					motorK.slider->setTargetPosAndSpeed(value1, value2);
+					break;
 				case 8:// auger on/off reverse/forward
 					motorK.auger->setDirection(value1, value2);
 					break;
@@ -136,7 +139,6 @@ void serialEvent() {
 				break;
 			}
 		}
-
 		else {// com failed, stop all actuators
 			motorK.motors->drive(0, 0); //should be all motors
 		}
