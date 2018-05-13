@@ -40,10 +40,9 @@ void serialEvent() {
 				switch (device)
 				{
 				case 1:
-					char *kangarooName = motorK.motors->currentSpeeds;
-					char *errorStatus = motorK.motors->currentSpeeds;
-					sendData(1, 10, kangarooName, errorStatus);
-					sendData(1, 10, kangarooName, errorStatus);
+					//char *kangarooName = motorK.motors->currentSpeeds;
+					//char *errorStatus = motorK.motors->currentSpeeds;
+					//sendData(1, 10, kangarooName, errorStatus);
 					break;
 				case 10:
 					motorK.motors->setSpeedLimit(value1);

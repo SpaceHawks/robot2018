@@ -50,7 +50,6 @@ Sets default max Speed.
 */
 void LinearActuator::getExtremes()
 {
-<<<<<<< HEAD
 		long absMin = getMin().value();
 		long absMax = getMax().value();
 		long safeBound = (absMax - absMin)*0.02;
@@ -67,7 +66,6 @@ void LinearActuator::getExtremes()
 	maxSpeed = 208;
 	//maxSpeed = 0.5 * (absMax - absMin);
 	Serial.println("max speed is: " + String(maxSpeed));
->>>>>>> 8e6471b70e162664ce03b2f2ab0fec9e35182fd9
 }
 /*!
 Sets target position for Linear Actuator between 0 and 100.
