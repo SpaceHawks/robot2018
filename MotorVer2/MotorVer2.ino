@@ -40,13 +40,15 @@ void serialEvent() {
 				switch (device)
 				{
 				case 1:
-					//char *kangarooName = motorK.motors->currentSpeeds;
-					//char *errorStatus = motorK.motors->currentSpeeds;
-					//sendData(1, 10, kangarooName, errorStatus);
+					KangarooError errorStatuses[8];
+					motorK.getStatus(errorStatuses);
+					for (int i = 0; i < 8; i++)
+					{
+						sendSystem(1, i + 1, errorStatuses[i]);
+					}
 					break;
 				case 10:
 					motorK.motors->setSpeedLimit(value1);
-					motorK.getStatus();
 					break;
 				default:
 					break;
@@ -97,19 +99,14 @@ void serialEvent() {
 				switch (device)
 				{
 				case 0:
-
 					break;
 				case 1:
-					//Serial1.write(motorK.motors->getFrRightMotorS());
 					break;
 				case 2:
-					//Serial1.write(motorK.motors->getFrLeftMotorS());
 					break;
 				case 3:
-					//Serial1.write(motorK.motors->getReLeftMotorS());
 					break;
 				case 4:
-					//Serial1.write(motorK.motors->getReRightMotorS());
 					break;
 				case 5:
 					//sendData(5, speeds[FRONT_LEFT], speeds[FRONT_RIGHT]);
@@ -124,18 +121,11 @@ void serialEvent() {
 				}
 				case 10:
 				{
-					//motorK.motors->getMotorSpeedS();
-					//char spd[] = {speedArr[0], speedArr[1], speedArr[2], speedArr[3]};
-					//char spd[] = { 20,20,20,20,-79 };
-
-					//speeds[4] = getChecksum(speeds, 4);
-					//Serial1.write(speeds, 5);
-
 					char *speeds = motorK.motors->currentSpeeds;
 					speeds[FRONT_LEFT] = -speeds[FRONT_LEFT];
 					speeds[FRONT_RIGHT] = -speeds[FRONT_RIGHT];
-					sendData(3, 10, speeds[FRONT_LEFT], speeds[FRONT_RIGHT]);
-					sendData(3, 20, speeds[REAR_LEFT], speeds[REAR_RIGHT]);
+					sendData(10, speeds[FRONT_LEFT], speeds[FRONT_RIGHT]);
+					sendData(20, speeds[REAR_LEFT], speeds[REAR_RIGHT]);
 					break;
 				}
 				default:
@@ -150,8 +140,13 @@ void serialEvent() {
 	}
 }
 
-void sendData(char  command, char device, char value1, char value2) {
-	char data[] = { command, device, value1, value2, 0 };
+void sendData(char device, char value1, char value2) {
+	char data[] = { 3, device, value1, value2, 0 };
+	write(data, 4);
+}
+
+void sendSystem(char device, char value1, char value2) {
+	char data[] = { 0, device, value1, value2, 0 };
 	write(data, 4);
 }
 
@@ -184,7 +179,6 @@ bool verifyCheckSum(char arrayNum[], int len) {
 		Serial.print("Checksum fails.");
 		for (int i = 0; i < len; i++)
 		{
-			Serial.print("Test" + arrayNum[i]);
 			Serial.print("Test"+arrayNum[i]);
 			Serial.print(" ");
 		}

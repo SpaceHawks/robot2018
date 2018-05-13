@@ -47,12 +47,12 @@ public:
 	long lastVal;
 	long getCurrentVal();
 	bool done = false;
-	//	void setSpeed(long speed);
+//	void setSpeed(long speed);
 	void getExtremes();
 	void setTargetPosDirect(long pos);
 	void setTargetPosAndSpeed(long pos, long newSpeed);
 	void setSpeed(long newSpeed);
-	void setTargetPos(long pos);
+	void setTargetPos(long pos );
 	void loop();
 	KangarooStatus status;
 	void begin();
@@ -62,7 +62,7 @@ public:
 \class LinearActuatorPair
 \brief  This class controls two Linear Actuator synchronously.
 */
-class LinearActuatorPair {
+class LinearActuatorPair{
 public:
 	LinearActuatorPair(KangarooSerial& K, char name);
 	LinearActuator* channel[2];
@@ -111,7 +111,7 @@ public:
 	void setTargetPos(long pos);
 };
 
-class Motors {
+class Motors{
 public:
 	//long drive = 101;
 	long leftSpeed = 0;
@@ -157,7 +157,7 @@ public:
 	void stop();
 };
 
-class Slider : public LinearActuator {
+class Slider: public LinearActuator {
 public:
 	Slider(KangarooSerial& K, char name);
 };
@@ -180,7 +180,7 @@ protected:
 	KangarooSerial* K;
 	String channelList;
 	String channelType;
-
+	
 public:
 	Motors* motors;
 	LinearActuatorPair* linearActuatorPair;
@@ -190,6 +190,6 @@ public:
 	RMCKangaroo(USARTClass &serialPorta);
 	void loop();
 	void begin();
-	void getStatus();
+	void getStatus(KangarooError *errorStatuses);
 	KangarooStatus status[DEFAULT_NUMBER_OF_CHANNEL];
 };
