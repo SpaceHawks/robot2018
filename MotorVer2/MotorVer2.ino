@@ -81,6 +81,9 @@ void serialEvent() {
 				case 8:// auger on/off reverse/forward
 					motorK.auger->setDirection(value1, value2);
 					break;
+				case 9:// auger on/off reverse/forward
+					motorK.conveyor->setTargetSpeed(value2);
+					break;
 				case 10:
 					motorK.motors->drive((signed char)value1, (signed char)value2);
 					break;
@@ -89,6 +92,17 @@ void serialEvent() {
 					break;
 				case 12:
 					motorK.motors->shutDown();
+					break;
+				case 17: //new
+					if (value1 == 0)
+					{
+						motorK.slider->setSpeed(100);
+						motorK.slider->setTargetPosDirect(SLIDER_INITIAL_POS);
+					}
+					else if (value1 == 1)
+					{
+						motorK.slider->home().wait();
+					}
 					break;
 				default:
 					Serial.println("unhanddle command: " + String(command) + " " + String(device) + " " + String(value1) + " " + String(value2));

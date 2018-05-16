@@ -14,7 +14,7 @@ void LinearActuator::begin() {
 	Serial.println(errorStatus);
 	if (errorStatus == KANGAROO_NOT_HOMED)
 	{
-		//home();
+		home().wait();
 		getExtremes();
 	}
 	if (errorStatus == KANGAROO_NO_ERROR)
@@ -485,7 +485,7 @@ RMCKangaroo::RMCKangaroo(USARTClass &serial)
 	K = new KangarooSerial(*SerialPort);
 	motors = new Motors(*K, '3');
 	linearActuatorPair = new LinearActuatorPair(*K, '1');
-	auger = new Auger(2, 3);
+	auger = new Auger(5, 6);
 	slider = new Slider(*K, '7');
 	conveyor = new Conveyor(*K, '8');
 }
