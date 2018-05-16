@@ -123,14 +123,17 @@ void serialEvent() {
 				case 4:
 					break;
 				case 5:
-					//sendData(5, speeds[FRONT_LEFT], speeds[FRONT_RIGHT]);
-					//Serial1.write(motorK.linearActuatorPair->getCurrentVal, 3);
+				{
+					char leftPos = (char)motorK.linearActuatorPair->channel[0]->getCurrentVal();
+					char rightPos = (char)motorK.linearActuatorPair->channel[1]->getCurrentVal();
+					sendData(5, leftPos, rightPos);
 					break;
+				}
 				case 6:
 				{
-					//long *speedArr = motorK.linearActuatorPair -> getCurrentVal();
-					//Serial.println(*speedArr);
-					//Serial1.write(*speedArr, 3);
+					char leftPos = (char) motorK.linearActuatorPair->channel[0]->getCurrentVal();
+					char rightPos = (char) motorK.linearActuatorPair->channel[1]->getCurrentVal();
+					sendData(6, leftPos, rightPos);
 					break;
 				}
 				case 10:
